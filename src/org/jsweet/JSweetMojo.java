@@ -28,6 +28,8 @@ import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
@@ -64,7 +66,7 @@ import org.jsweet.transpiler.TranspilationHandler.SourcePosition;
 public class JSweetMojo extends AbstractMojo {
 
 	@Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
-	public EcmaScriptComplianceLevel ecmaTargetVersion;
+	public EcmaScriptComplianceLevel targetVersion;
 
 	@Parameter(defaultValue = "none", required = false, readonly = true)
 	public ModuleKind module;
@@ -78,9 +80,12 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter(required = false, readonly = true)
 	public boolean bundle;
 
-	@Parameter(required = false, readonly = true)
-	public boolean debug;
+	@Parameter(defaultValue = "true", required = false, readonly = true)
+	public boolean javaDebug;
 	
+	@Parameter(defaultValue = "false", required = false, readonly = true)
+	public boolean verbose;
+
 	@Parameter(required = false, readonly = true)
 	public String bundlesDirectory;
 
@@ -90,6 +95,18 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter
 	public String[] excludes;
 
+	@Parameter(defaultValue = "UTF-8", required = false)
+	public String encoding;
+
+	@Parameter(defaultValue = "false", required = false)
+	public boolean noRootDirectories;
+
+	@Parameter(defaultValue = "false", required = false)
+	public boolean enableAssertions;
+	
+	@Parameter( defaultValue = "${java.home}" )
+	protected File jdkHome;
+	
 	@Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
 	protected ArtifactRepository localRepository;
 
@@ -186,26 +203,36 @@ public class JSweetMojo extends AbstractMojo {
 				jsOutputDirPath = new File(this.outDir).getCanonicalPath();
 			}
 			jsOutDir = new File(jsOutputDirPath);
-
+			
 			getLog().info("> jsOut=" + jsOutDir);
 			getLog().info("> bundle=" + bundle);
 			if (bundlesDirectory != null) {
 				getLog().info("> bundlesDirectory=" + bundlesDirectory);
 			}
 			getLog().info("> tsOut=" + tsOutputDirPath);
-			getLog().info("> ecmaTargetVersion=" + ecmaTargetVersion);
+			getLog().info("> ecmaTargetVersion=" + targetVersion);
 			getLog().info("> moduleKind=" + module);
-			getLog().info("> debug=" + true);
+			getLog().info("> javaDebug=" + javaDebug);
+			getLog().info("> verbose=" + verbose);
+			getLog().info("> jdkHome=" + jdkHome);
+			
+			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
+			
+			if (verbose) {
+				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
+			}
 
 			transpiler = new JSweetTranspiler(workingDir, new File(tsOutputDirPath), jsOutDir, classPath);
-			transpiler.setPreserveSourceLineNumbers(true);
 			transpiler.setTscWatchMode(false);
-			transpiler.setEcmaTargetVersion(ecmaTargetVersion);
+			transpiler.setEcmaTargetVersion(targetVersion);
 			transpiler.setModuleKind(module);
 			transpiler.setBundle(bundle);
 			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
-			transpiler.setPreserveSourceLineNumbers(debug);
-			
+			transpiler.setPreserveSourceLineNumbers(javaDebug);
+			transpiler.setEncoding(encoding);
+			transpiler.setNoRootDirectories(noRootDirectories);
+			transpiler.setIgnoreAssertions(!enableAssertions);
+
 			return transpiler;
 
 		} catch (Exception e) {
@@ -282,7 +309,7 @@ public class JSweetMojo extends AbstractMojo {
 		public void report(JSweetProblem problem, SourcePosition sourcePosition, String message) {
 			alerts.add(new Alert(problem, sourcePosition, message));
 		}
-		
+
 		@Override
 		public void reportSilentError() {
 		}

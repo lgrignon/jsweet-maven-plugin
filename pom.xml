@@ -10,11 +10,6 @@
 	<name>JSweet maven plugin</name>
 	<developers>
 		<developer>
-			<id>rpawlak</id>
-			<name>Renaud Pawlak</name>
-			<email>renaud.pawlak@gmail.com</email>
-		</developer>
-		<developer>
 			<id>lgrignon</id>
 			<name>Louis Grignon</name>
 			<email>louis.grignon@gmail.com</email>
