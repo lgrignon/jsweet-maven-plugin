@@ -18,6 +18,7 @@ package org.jsweet;
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 import static org.jsweet.Util.getTranspilerWorkingDirectory;
+import static org.jsweet.transpiler.TranspilationHandler.OUTPUT_LOGGER;
 
 import java.io.File;
 import java.util.HashSet;
@@ -54,8 +55,9 @@ import org.jsweet.transpiler.JSweetProblem;
 import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.SourceFile;
-import org.jsweet.transpiler.TranspilationHandler;
 import org.jsweet.transpiler.TranspilationHandler.SourcePosition;
+import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
+import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 
 /**
  * JSweet transpiler as a maven plugin
@@ -80,9 +82,9 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter(required = false, readonly = true)
 	public boolean bundle;
 
-	@Parameter(defaultValue = "true", required = false, readonly = true)
-	public boolean javaDebug;
-	
+	@Parameter(defaultValue = "false", required = false, readonly = true)
+	public boolean debug;
+
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	public boolean verbose;
 
@@ -103,10 +105,10 @@ public class JSweetMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "false", required = false)
 	public boolean enableAssertions;
-	
-	@Parameter( defaultValue = "${java.home}" )
+
+	@Parameter(defaultValue = "${java.home}")
 	protected File jdkHome;
-	
+
 	@Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
 	protected ArtifactRepository localRepository;
 
@@ -124,30 +126,49 @@ public class JSweetMojo extends AbstractMojo {
 
 	private JSweetTranspiler transpiler;
 
-	private List<Alert> alerts;
+	private void logInfo(String content) {
+		if (verbose) {
+			getLog().info(content);
+		}
+	}
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
-		alerts = new LinkedList<>();
-
-		getLog().info("executing jsweet transpilation");
-		Map<?, ?> ctx = getPluginContext();
-
-		MavenProject project = (MavenProject) ctx.get("project");
-		// PluginDescriptor pluginDescriptor = (PluginDescriptor)
-		// ctx.get("pluginDescriptor");
-
-		createJSweetTranspiler(project);
-		SourceFile[] sources = collectSourceFiles(project);
 
 		try {
-			transpiler.transpile(new JSweetTranspilationHandler(), sources);
+			getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: " + JSweetConfig.getBuildDate() + ")");
+			Map<?, ?> ctx = getPluginContext();
+
+			MavenProject project = (MavenProject) ctx.get("project");
+			// PluginDescriptor pluginDescriptor = (PluginDescriptor)
+			// ctx.get("pluginDescriptor");
+
+			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
+					new ConsoleTranspilationHandler());
+			try {
+				createJSweetTranspiler(project);
+				SourceFile[] sources = collectSourceFiles(project);
+
+				transpiler.transpile(transpilationHandler, sources);
+			} catch (NoClassDefFoundError error) {
+				transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
+						JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
+			}
+
+			int errorCount = transpilationHandler.getErrorCount();
+			if (errorCount > 0) {
+				throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
+						+ transpilationHandler.getWarningCount() + " warning(s)");
+			} else {
+				if (transpilationHandler.getWarningCount() > 0) {
+					getLog().info(
+							"transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
+				} else {
+					getLog().info("transpilation successfully completed with no errors and no warnings");
+				}
+			}
 		} catch (Exception e) {
 			getLog().error("transpilation failed", e);
 			throw new MojoExecutionException("transpilation failed", e);
-		}
-
-		if (alerts.size() > 0) {
-			throw new MojoFailureException("problems encountered: " + alerts);
 		}
 	}
 
@@ -156,10 +177,10 @@ public class JSweetMojo extends AbstractMojo {
 		@SuppressWarnings("unchecked")
 		List<String> sourcePaths = project.getCompileSourceRoots();
 
-		getLog().info("source includes: " + ArrayUtils.toString(includes));
-		getLog().info("source excludes: " + ArrayUtils.toString(excludes));
+		logInfo("source includes: " + ArrayUtils.toString(includes));
+		logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
-		getLog().info("sources paths: " + sourcePaths);
+		logInfo("sources paths: " + sourcePaths);
 
 		List<SourceFile> sources = new LinkedList<>();
 		for (String sourcePath : sourcePaths) {
@@ -178,7 +199,7 @@ public class JSweetMojo extends AbstractMojo {
 		// TODO : what is dynamic compile source? => NoSuchMethod if uncommented
 		// sourcePaths.addAll(project.getDynamicCompileSourceRoots());
 
-		getLog().info("sourceFiles=" + sources);
+		logInfo("sourceFiles=" + sources);
 
 		return sources.toArray(new SourceFile[0]);
 	}
@@ -191,44 +212,43 @@ public class JSweetMojo extends AbstractMojo {
 					.map(f -> f.getAbsolutePath()) //
 					.collect(joining(System.getProperty("path.separator")));
 
-			File workingDir = getTranspilerWorkingDirectory(project);
-			String tsOutputDirPath = workingDir.getCanonicalPath() + File.separator + "ts";
+			String tsOutputDirPath = ".ts";
 			if (isNotBlank(this.tsOut)) {
 				tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
 			}
 
 			File jsOutDir = null;
-			String jsOutputDirPath = workingDir.getCanonicalPath() + File.separator + "js";
+			String jsOutputDirPath = "js";
 			if (isNotBlank(this.outDir)) {
 				jsOutputDirPath = new File(this.outDir).getCanonicalPath();
 			}
 			jsOutDir = new File(jsOutputDirPath);
-			
-			getLog().info("> jsOut=" + jsOutDir);
-			getLog().info("> bundle=" + bundle);
+
+			logInfo("jsOut: " + jsOutDir);
+			logInfo("bundle: " + bundle);
 			if (bundlesDirectory != null) {
-				getLog().info("> bundlesDirectory=" + bundlesDirectory);
+				logInfo("bundlesDirectory: " + bundlesDirectory);
 			}
-			getLog().info("> tsOut=" + tsOutputDirPath);
-			getLog().info("> ecmaTargetVersion=" + targetVersion);
-			getLog().info("> moduleKind=" + module);
-			getLog().info("> javaDebug=" + javaDebug);
-			getLog().info("> verbose=" + verbose);
-			getLog().info("> jdkHome=" + jdkHome);
-			
+			logInfo("tsOut: " + tsOutputDirPath);
+			logInfo("ecmaTargetVersion: " + targetVersion);
+			logInfo("moduleKind: " + module);
+			logInfo("debug: " + debug);
+			logInfo("verbose: " + verbose);
+			logInfo("jdkHome: " + jdkHome);
+
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
-			
+
 			if (verbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			transpiler = new JSweetTranspiler(workingDir, new File(tsOutputDirPath), jsOutDir, classPath);
+			transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, classPath);
 			transpiler.setTscWatchMode(false);
 			transpiler.setEcmaTargetVersion(targetVersion);
 			transpiler.setModuleKind(module);
 			transpiler.setBundle(bundle);
 			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
-			transpiler.setPreserveSourceLineNumbers(javaDebug);
+			transpiler.setPreserveSourceLineNumbers(debug);
 			transpiler.setEncoding(encoding);
 			transpiler.setNoRootDirectories(noRootDirectories);
 			transpiler.setIgnoreAssertions(!enableAssertions);
@@ -246,7 +266,7 @@ public class JSweetMojo extends AbstractMojo {
 
 		@SuppressWarnings("unchecked")
 		List<Dependency> dependencies = project.getDependencies();
-		getLog().info("dependencies=" + dependencies);
+		logInfo("dependencies=" + dependencies);
 
 		// add artifacts of declared dependencies
 		List<Artifact> directDependencies = new LinkedList<>();
@@ -257,7 +277,7 @@ public class JSweetMojo extends AbstractMojo {
 				Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(),
 						dependency.getArtifactId(), dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-				getLog().info("add direct candy dependency: " + dependency + "=" + mavenArtifact);
+				logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
 
 				directDependencies.add(mavenArtifact);
 			}
@@ -273,7 +293,7 @@ public class JSweetMojo extends AbstractMojo {
 
 		@SuppressWarnings("unchecked")
 		Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
-		getLog().info("all candies artifacts: " + allDependenciesArtifacts);
+		logInfo("all candies artifacts: " + allDependenciesArtifacts);
 
 		// add dependencies files
 		List<File> dependenciesFiles = new LinkedList<>();
@@ -281,7 +301,7 @@ public class JSweetMojo extends AbstractMojo {
 			dependenciesFiles.add(depResult.getArtifact().getFile());
 		}
 
-		getLog().info("candies jars: " + dependenciesFiles);
+		logInfo("candies jars: " + dependenciesFiles);
 
 		return dependenciesFiles;
 	}
@@ -303,20 +323,4 @@ public class JSweetMojo extends AbstractMojo {
 		}
 	}
 
-	private class JSweetTranspilationHandler implements TranspilationHandler {
-
-		@Override
-		public void report(JSweetProblem problem, SourcePosition sourcePosition, String message) {
-			alerts.add(new Alert(problem, sourcePosition, message));
-		}
-
-		@Override
-		public void reportSilentError() {
-		}
-
-		@Override
-		public void onCompleted(JSweetTranspiler transpiler, boolean fullPass, SourceFile[] files) {
-
-		}
-	}
 }
