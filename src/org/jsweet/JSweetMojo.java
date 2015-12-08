@@ -17,8 +17,6 @@ package org.jsweet;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.jsweet.Util.getTranspilerWorkingDirectory;
-import static org.jsweet.transpiler.TranspilationHandler.OUTPUT_LOGGER;
 
 import java.io.File;
 import java.util.HashSet;
