@@ -57,21 +57,8 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 
 The configuration options of the plugin:
 Name     |    Type       | Values | Default | Example
---- | --- | --- | --- | --- 
-targetVersion | enum | ES3, ES5, ES6 | ES3 | ``` <targetVersion>ES3</targetVersion> ```
-module | enum | commonjs, amd, system, umd | none | ```<module>commonjs</module>```
-outDir | string | JS files output directory | .jsweet/js | ```<outDir>js</outDir>```
-tsOut | string | Temporary TypeScript output directory | .jsweet/ts | ```<tsOut>temp/ts</tsOut>```
-includes | string[] | Java source files to be included | N/A | ```<includes><include>**/*.java</include></includes>```
-excludes | string[] | Source files to be excluded | N/A | ```<excludes><exclude>**/lib/**</exclude></excludes>```
-bundle | boolean | Concats all JS file into one bundle | false |   ```<bundle>true</bundle>```
-bundlesDirectory | string | JS bundles output directory | N/A | ```<bundlesDirectory>js/dist</bundlesDirectory>```
-javaDebug | boolean | In-browser debug mode - true for java, typescript else | true | ```<javaDebug>true</javaDebug>```
-encoding | string | Java files encoding | UTF-8 | ```<encoding>ISO-8859-1</encoding>```
-noRootDirectories | boolean | output is relative to @jsweet.lang.Root package's directories | false | ```<noRootDirectories>true</noRootDirectories>```
-enableAssertions | boolean | assert are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```
-verbose | boolean | Verbose transpiler output | false | ```<verbose>true</verbose>```
-jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven with a JRE | ${java.home} | ```<jdkHome>/opt/jdk8</jdkHome>```
+-------- | ------------- | ------ | ------- | ------- 
+targetVersion | enum | ES3, ES5, ES6 | ES3 | test
 
 
 Then, just run the maven command line as usual:
