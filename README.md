@@ -56,6 +56,9 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 ```
 
 The configuration options of the plugin:
+
+
+
 Name     |    Type       | Values | Default | Example
 -------- | ------------- | ------ | ------- | ------- 
 targetVersion | enum | ES3, ES5, ES6 | ES3 | test
