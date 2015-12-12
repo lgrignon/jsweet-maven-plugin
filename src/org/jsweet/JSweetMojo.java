@@ -53,7 +53,6 @@ import org.jsweet.transpiler.JSweetProblem;
 import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.SourceFile;
-import org.jsweet.transpiler.TranspilationHandler.SourcePosition;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 
@@ -133,7 +132,8 @@ public class JSweetMojo extends AbstractMojo {
 	public void execute() throws MojoFailureException, MojoExecutionException {
 
 		try {
-			getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: " + JSweetConfig.getBuildDate() + ")");
+			getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
+					+ JSweetConfig.getBuildDate() + ")");
 			Map<?, ?> ctx = getPluginContext();
 
 			MavenProject project = (MavenProject) ctx.get("project");
@@ -270,7 +270,11 @@ public class JSweetMojo extends AbstractMojo {
 		List<Artifact> directDependencies = new LinkedList<>();
 		for (Dependency dependency : dependencies) {
 
-			if (dependency.getGroupId().startsWith(JSweetConfig.MAVEN_CANDIES_GROUP)) {
+			logInfo("checking dependency: " + dependency + "=" + dependency.getGroupId() + ":"
+					+ dependency.getArtifactId());
+
+			if (dependency.getGroupId().startsWith(JSweetConfig.MAVEN_CANDIES_GROUP)
+					|| JSweetConfig.MAVEN_JAVA_OVERRIDE_ARTIFACT.equals(dependency.getArtifactId())) {
 
 				Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(),
 						dependency.getArtifactId(), dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
@@ -302,23 +306,6 @@ public class JSweetMojo extends AbstractMojo {
 		logInfo("candies jars: " + dependenciesFiles);
 
 		return dependenciesFiles;
-	}
-
-	private class Alert {
-		JSweetProblem problem;
-		SourcePosition sourcePosition;
-		String message;
-
-		private Alert(JSweetProblem problem, SourcePosition sourcePosition, String message) {
-			this.problem = problem;
-			this.sourcePosition = sourcePosition;
-			this.message = message;
-		}
-
-		@Override
-		public String toString() {
-			return problem + ": " + message + " in " + sourcePosition;
-		}
 	}
 
 }
