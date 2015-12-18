@@ -67,7 +67,7 @@ includes | string[] | Java source files to be included | N/A | ```<includes><inc
 excludes | string[] | Source files to be excluded | N/A | ```<excludes><exclude>**/lib/**</exclude></excludes>```
 bundle | boolean | Concats all JS file into one bundle | false |   ```<bundle>true</bundle>```
 bundlesDirectory | string | JS bundles output directory | N/A | ```<bundlesDirectory>js/dist</bundlesDirectory>```
-javaDebug | boolean | In-browser debug mode - true for java, typescript else | true | ```<javaDebug>true</javaDebug>```
+sourceMap | boolean | In-browser debug mode - true for java, typescript else | true | ```<sourceMap>true</sourceMap>```
 encoding | string | Java files encoding | UTF-8 | ```<encoding>ISO-8859-1</encoding>```
 noRootDirectories | boolean | output is relative to @jsweet.lang.Root package's directories | false | ```<noRootDirectories>true</noRootDirectories>```
 enableAssertions | boolean | assert are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```

@@ -80,7 +80,7 @@ public class JSweetMojo extends AbstractMojo {
 	public boolean bundle;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
-	public boolean debug;
+	public boolean sourceMap;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	public boolean verbose;
@@ -137,8 +137,6 @@ public class JSweetMojo extends AbstractMojo {
 			Map<?, ?> ctx = getPluginContext();
 
 			MavenProject project = (MavenProject) ctx.get("project");
-			// PluginDescriptor pluginDescriptor = (PluginDescriptor)
-			// ctx.get("pluginDescriptor");
 
 			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
 					new ConsoleTranspilationHandler());
@@ -230,7 +228,7 @@ public class JSweetMojo extends AbstractMojo {
 			logInfo("tsOut: " + tsOutputDirPath);
 			logInfo("ecmaTargetVersion: " + targetVersion);
 			logInfo("moduleKind: " + module);
-			logInfo("debug: " + debug);
+			logInfo("sourceMap: " + sourceMap);
 			logInfo("verbose: " + verbose);
 			logInfo("jdkHome: " + jdkHome);
 
@@ -246,7 +244,7 @@ public class JSweetMojo extends AbstractMojo {
 			transpiler.setModuleKind(module);
 			transpiler.setBundle(bundle);
 			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
-			transpiler.setPreserveSourceLineNumbers(debug);
+			transpiler.setPreserveSourceLineNumbers(sourceMap);
 			transpiler.setEncoding(encoding);
 			transpiler.setNoRootDirectories(noRootDirectories);
 			transpiler.setIgnoreAssertions(!enableAssertions);
