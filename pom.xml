@@ -140,7 +140,7 @@
 
 	<distributionManagement>
 		<repository>
-			<id>plugins-release</id>
+			<id>jsweet-release</id>
 			<name>plugins-release</name>
 			<url>http://repository.jsweet.org/artifactory/plugins-release-local</url>
 		</repository>
