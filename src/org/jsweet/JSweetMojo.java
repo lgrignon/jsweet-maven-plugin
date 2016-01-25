@@ -79,7 +79,7 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter(required = false, readonly = true)
 	public boolean bundle;
 
-	@Parameter(required = false, readonly = true)
+	@Parameter(defaultValue = "false", required = false, readonly = true)
 	public boolean declaration;
 
 	@Parameter(readonly = true)
