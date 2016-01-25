@@ -79,6 +79,12 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter(required = false, readonly = true)
 	public boolean bundle;
 
+	@Parameter(required = false, readonly = true)
+	public boolean declaration;
+
+	@Parameter(readonly = true)
+	public String dtsOut;
+	
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	public boolean sourceMap;
 
@@ -220,6 +226,11 @@ public class JSweetMojo extends AbstractMojo {
 			}
 			jsOutDir = new File(jsOutputDirPath);
 
+			File declarationOutDir = null;
+			if (isNotBlank(this.dtsOut)) {
+				declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+			}
+			
 			logInfo("jsOut: " + jsOutDir);
 			logInfo("bundle: " + bundle);
 			if (bundlesDirectory != null) {
@@ -248,7 +259,9 @@ public class JSweetMojo extends AbstractMojo {
 			transpiler.setEncoding(encoding);
 			transpiler.setNoRootDirectories(noRootDirectories);
 			transpiler.setIgnoreAssertions(!enableAssertions);
-
+			transpiler.setGenerateDeclarations(declaration);
+			transpiler.setDeclarationsOutputDir(declarationOutDir);
+			
 			return transpiler;
 
 		} catch (Exception e) {
