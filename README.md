@@ -73,6 +73,8 @@ noRootDirectories | boolean | output is relative to @jsweet.lang.Root package's 
 enableAssertions | boolean | assert are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```
 verbose | boolean | Verbose transpiler output | false | ```<verbose>true</verbose>```
 jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven with a JRE | ${java.home} | ```<jdkHome>/opt/jdk8</jdkHome>```
+declaration | boolean | Generates TypeScript d.ts | false | ```<declaration>true</declaration>```
+dtsOut | string | TypeScript d.ts output directory when the declaration option is true | outDir | ```<dtsOut>typings</dtsOut>```
 
 
 Then, just run the maven command line as usual:

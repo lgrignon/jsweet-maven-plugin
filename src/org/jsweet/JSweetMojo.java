@@ -80,6 +80,12 @@ public class JSweetMojo extends AbstractMojo {
 	public boolean bundle;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
+	public boolean declaration;
+
+	@Parameter(readonly = true)
+	public String dtsOut;
+
+	@Parameter(defaultValue = "false", required = false, readonly = true)
 	public boolean sourceMap;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
@@ -208,6 +214,8 @@ public class JSweetMojo extends AbstractMojo {
 					.map(f -> f.getAbsolutePath()) //
 					.collect(joining(System.getProperty("path.separator")));
 
+			logInfo("classpath from maven: " + classPath);
+
 			String tsOutputDirPath = ".ts";
 			if (isNotBlank(this.tsOut)) {
 				tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
@@ -219,6 +227,11 @@ public class JSweetMojo extends AbstractMojo {
 				jsOutputDirPath = new File(this.outDir).getCanonicalPath();
 			}
 			jsOutDir = new File(jsOutputDirPath);
+
+			File declarationOutDir = null;
+			if (isNotBlank(this.dtsOut)) {
+				declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+			}
 
 			logInfo("jsOut: " + jsOutDir);
 			logInfo("bundle: " + bundle);
@@ -248,6 +261,8 @@ public class JSweetMojo extends AbstractMojo {
 			transpiler.setEncoding(encoding);
 			transpiler.setNoRootDirectories(noRootDirectories);
 			transpiler.setIgnoreAssertions(!enableAssertions);
+			transpiler.setGenerateDeclarations(declaration);
+			transpiler.setDeclarationsOutputDir(declarationOutDir);
 
 			return transpiler;
 
@@ -267,20 +282,12 @@ public class JSweetMojo extends AbstractMojo {
 		// add artifacts of declared dependencies
 		List<Artifact> directDependencies = new LinkedList<>();
 		for (Dependency dependency : dependencies) {
+			Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
+					dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-			logInfo("checking dependency: " + dependency + "=" + dependency.getGroupId() + ":"
-					+ dependency.getArtifactId());
+			logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
 
-			if (dependency.getGroupId().startsWith(JSweetConfig.MAVEN_CANDIES_GROUP)
-					|| JSweetConfig.MAVEN_JAVA_OVERRIDE_ARTIFACT.equals(dependency.getArtifactId())) {
-
-				Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(),
-						dependency.getArtifactId(), dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
-
-				logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
-
-				directDependencies.add(mavenArtifact);
-			}
+			directDependencies.add(mavenArtifact);
 		}
 
 		// lookup for transitive dependencies
