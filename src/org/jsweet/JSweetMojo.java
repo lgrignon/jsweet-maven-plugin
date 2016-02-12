@@ -239,6 +239,7 @@ public class JSweetMojo extends AbstractMojo {
 				logInfo("bundlesDirectory: " + bundlesDirectory);
 			}
 			logInfo("tsOut: " + tsOutputDirPath);
+			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("ecmaTargetVersion: " + targetVersion);
 			logInfo("moduleKind: " + module);
 			logInfo("sourceMap: " + sourceMap);
