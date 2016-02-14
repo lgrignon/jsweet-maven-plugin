@@ -94,6 +94,9 @@ public class JSweetMojo extends AbstractMojo {
 	@Parameter(required = false, readonly = true)
 	public String bundlesDirectory;
 
+	@Parameter(required = false, readonly = true)
+	protected File candiesJsOut;
+
 	@Parameter
 	public String[] includes;
 
@@ -239,7 +242,9 @@ public class JSweetMojo extends AbstractMojo {
 				logInfo("bundlesDirectory: " + bundlesDirectory);
 			}
 			logInfo("tsOut: " + tsOutputDirPath);
+			logInfo("declarations: " + declaration);
 			logInfo("declarationOutDir: " + declarationOutDir);
+			logInfo("candiesJsOutDir: " + candiesJsOut);
 			logInfo("ecmaTargetVersion: " + targetVersion);
 			logInfo("moduleKind: " + module);
 			logInfo("sourceMap: " + sourceMap);
@@ -252,7 +257,7 @@ public class JSweetMojo extends AbstractMojo {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, classPath);
+			transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, candiesJsOut, classPath);
 			transpiler.setTscWatchMode(false);
 			transpiler.setEcmaTargetVersion(targetVersion);
 			transpiler.setModuleKind(module);

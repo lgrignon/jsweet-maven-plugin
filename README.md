@@ -75,7 +75,7 @@ verbose | boolean | Verbose transpiler output | false | ```<verbose>true</verbos
 jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven with a JRE | ${java.home} | ```<jdkHome>/opt/jdk8</jdkHome>```
 declaration | boolean | Generates TypeScript d.ts | false | ```<declaration>true</declaration>```
 dtsOut | string | TypeScript d.ts output directory when the declaration option is true | outDir | ```<dtsOut>typings</dtsOut>```
-
+candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<candiesJsOut>www/js/candies</candiesJsOut>```
 
 Then, just run the maven command line as usual:
 
