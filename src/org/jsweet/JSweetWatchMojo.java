@@ -1,29 +1,4 @@
-/* 
- * Copyright (C) 2015 Louis Grignon <louis.grignon@gmail.com>
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *     http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package org.jsweet;
-
-import static java.util.stream.Collectors.joining;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
-
-import java.io.File;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -33,11 +8,7 @@ import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionException;
-import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
-import org.apache.maven.artifact.resolver.ArtifactResolver;
-import org.apache.maven.artifact.resolver.ResolutionNode;
+import org.apache.maven.artifact.resolver.*;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -48,21 +19,35 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
-import org.jsweet.transpiler.EcmaScriptComplianceLevel;
-import org.jsweet.transpiler.JSweetProblem;
-import org.jsweet.transpiler.JSweetTranspiler;
-import org.jsweet.transpiler.ModuleKind;
-import org.jsweet.transpiler.SourceFile;
+import org.jsweet.transpiler.*;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.*;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static java.nio.file.StandardWatchEventKinds.*;
+
+import static java.nio.file.FileVisitResult.*;
+import static java.util.stream.Collectors.joining;
+import static org.apache.commons.lang3.StringUtils.isNotBlank;
+
 /**
- * JSweet transpiler as a maven plugin
  *
- * @author Louis Grignon
+ * @author ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com -/- CODING IS AN ART
+ *
+ * <p>
+ *
+ * On the fly transpilation ...
+ *
  */
-@Mojo(name = "jsweet", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
-public class JSweetMojo extends AbstractMojo {
+
+@Mojo(name = "watch", defaultPhase = LifecyclePhase.TEST)
+public class JSweetWatchMojo extends AbstractMojo {
 
     @Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
     public EcmaScriptComplianceLevel targetVersion;
@@ -132,22 +117,263 @@ public class JSweetMojo extends AbstractMojo {
 
     private JSweetTranspiler transpiler;
 
-    private void logInfo(String content) {
-        if (verbose) {
-            getLog().info(content);
+    /* */
+
+    private static ReentrantLock __Lock = new ReentrantLock();
+
+    private static LinkedList<String> __RandomKeysTrigger = new LinkedList<>();
+
+    /* */
+
+    public void execute() throws MojoFailureException, MojoExecutionException {
+
+        Map<?, ?> ctx = getPluginContext();
+
+        MavenProject project = (MavenProject) ctx.get("project");
+
+        /* */
+
+        initialize(project);
+
+    }
+
+    private void initialize(MavenProject project) {
+
+        getLog().info("- Searching for directory  ... ");
+
+        /* */
+
+        List<String> sourcePaths = project.getCompileSourceRoots();
+
+        try {
+
+            for (; ; ) {
+
+                /* */
+
+                WatchService watchService = FileSystems.getDefault().newWatchService();
+
+                List<Path> watchedPaths = new ArrayList<>();
+
+                /* */
+
+                for (String sourceDirectory : sourcePaths) {
+
+                    Path path = Paths.get(sourceDirectory);
+
+                    watchedPaths.add(path);
+
+                    walkDirectoryTree(path, watchedPaths);
+
+                }
+
+                getLog().info("- Done  ...");
+
+                /* */
+
+                getLog().info("- Registering path");
+
+                for (Path path : watchedPaths) {
+
+                    getLog().info("  + Adding [" + path.toString() + "]");
+
+                }
+
+                registerPaths(watchedPaths, watchService);
+
+                /* */
+
+                getLog().info("");
+
+                /* */
+
+                getLog().info("- Starting transpilator process  ... ");
+
+                TranspilatorThread T = new TranspilatorThread(project);
+
+                T.start();
+
+                /* */
+
+                getLog().info("- Listening for file change   ... ");
+
+                /* */
+
+                try {
+
+                    watch(watchService, project);
+
+                } catch (Exception exception) {
+
+                    watchService.close();
+
+                }
+
+                /* */
+
+                Thread.currentThread().yield();
+
+            }
+
+            /* */
+
+        } catch (IOException ioException) {
+
+            getLog().error(ioException);
+
         }
     }
 
-    public void execute() throws MojoFailureException, MojoExecutionException {
+    /* */
+
+    private void walkDirectoryTree(Path startPath, List<Path> watchedPaths) throws IOException {
+
+        FileTreeScanner scanner = new FileTreeScanner(watchedPaths);
+
+        Files.walkFileTree(startPath, scanner);
+
+    }
+
+    /* */
+
+    private void registerPaths(List<Path> paths, WatchService watchService) {
+
+        for (Path path : paths) {
+
+            try {
+
+                path.register(
+                        watchService,
+                        ENTRY_CREATE,
+                        ENTRY_DELETE,
+                        ENTRY_MODIFY,
+                        OVERFLOW
+                );
+
+            } catch (IOException ioException) {
+
+                getLog().error(ioException);
+
+            }
+
+        }
+
+    }
+
+    /* */
+
+    private void watch(WatchService watchService, MavenProject project) throws Exception {
+
+        for (; ; ) {
+
+            WatchKey key;
+
+            try {
+
+                key = watchService.take();
+
+            } catch (InterruptedException x) {
+
+                return;
+
+            }
+
+            for (WatchEvent<?> event : key.pollEvents()) {
+
+                WatchEvent.Kind<?> kind = event.kind();
+
+                if (kind == OVERFLOW) {
+
+                    continue;
+
+                }
+
+                WatchEvent<Path> ev = (WatchEvent<Path>) event;
+
+                Path filename = ev.context();
+
+                if (kind == ENTRY_MODIFY || kind == ENTRY_CREATE || kind == ENTRY_DELETE) {
+
+                    getLog().info("* File change detected * " + filename);
+
+                    __Lock.lock();
+
+                    __RandomKeysTrigger.add(String.valueOf((int) (10000 * Math.random()))); // generate a random entry
+
+                    __Lock.unlock();
+
+                }
+
+            }
+
+            boolean valid = key.reset();
+
+            if (!valid) {
+
+                break;
+
+            }
+
+        }
+
+        /* */
+
+        try {
+
+            watchService.close();
+
+        } catch (IOException ioException) {
+
+            getLog().error(ioException);
+
+        }
+
+        /* */
+
+    }
+
+    public static class FileTreeScanner extends SimpleFileVisitor<Path> {
+
+        private List<Path> _directories;
+
+        public FileTreeScanner(List<Path> directories) {
+
+            _directories = directories;
+
+        }
+
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
+
+            //--> DO NOTHING
+
+            return CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path directory, IOException exc) {
+
+            _directories.add(directory);
+
+            return CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult visitFileFailed(Path file, IOException exc) {
+
+            //--> DO NOTHING
+
+            return CONTINUE;
+        }
+    }
+
+    public void transpile(MavenProject project) throws MojoFailureException, MojoExecutionException {
 
         try {
 
             getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
                     + JSweetConfig.getBuildDate() + ")");
 
-            Map<?, ?> ctx = getPluginContext();
-
-            MavenProject project = (MavenProject) ctx.get("project");
 
             ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
                     new ConsoleTranspilationHandler());
@@ -202,17 +428,20 @@ public class JSweetMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         List<String> sourcePaths = project.getCompileSourceRoots();
 
-        logInfo("source includes: " + ArrayUtils.toString(includes));
-        logInfo("source excludes: " + ArrayUtils.toString(excludes));
-
-        logInfo("sources paths: " + sourcePaths);
+        getLog().info("source includes: " + ArrayUtils.toString(includes));
+        getLog().info("source excludes: " + ArrayUtils.toString(excludes));
+        getLog().info("sources paths: " + sourcePaths);
 
         List<SourceFile> sources = new LinkedList<>();
+
         for (String sourcePath : sourcePaths) {
+
             DirectoryScanner dirScanner = new DirectoryScanner();
+
             dirScanner.setBasedir(new File(sourcePath));
             dirScanner.setIncludes(includes);
             dirScanner.setExcludes(excludes);
+
             dirScanner.scan();
 
             for (String includedPath : dirScanner.getIncludedFiles()) {
@@ -227,9 +456,10 @@ public class JSweetMojo extends AbstractMojo {
 
         }
 
-        logInfo("sourceFiles=" + sources);
+        getLog().info("sourceFiles=" + sources);
 
         return sources.toArray(new SourceFile[0]);
+
     }
 
     private JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
@@ -238,49 +468,47 @@ public class JSweetMojo extends AbstractMojo {
 
             List<File> dependenciesFiles = getCandiesJars(project);
 
-            String classPath = dependenciesFiles.stream() //
-                    .map(f -> f.getAbsolutePath()) //
+            String classPath = dependenciesFiles.stream()
+                    .map(f -> f.getAbsolutePath())
                     .collect(joining(System.getProperty("path.separator")));
 
-            logInfo("classpath from maven: " + classPath);
-
             String tsOutputDirPath = ".ts";
+
             if (isNotBlank(this.tsOut)) {
+
                 tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
+
             }
 
             File jsOutDir = null;
+
             String jsOutputDirPath = "js";
+
             if (isNotBlank(this.outDir)) {
+
                 jsOutputDirPath = new File(this.outDir).getCanonicalPath();
+
             }
+
             jsOutDir = new File(jsOutputDirPath);
 
             File declarationOutDir = null;
+
             if (isNotBlank(this.dtsOut)) {
+
                 declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+
             }
 
-            logInfo("jsOut: " + jsOutDir);
-            logInfo("bundle: " + bundle);
             if (bundlesDirectory != null) {
-                logInfo("bundlesDirectory: " + bundlesDirectory);
+
+                getLog().info("bundlesDirectory: " + bundlesDirectory);
+
             }
-            logInfo("tsOut: " + tsOutputDirPath);
-            logInfo("declarations: " + declaration);
-            logInfo("declarationOutDir: " + declarationOutDir);
-            logInfo("candiesJsOutDir: " + candiesJsOut);
-            logInfo("ecmaTargetVersion: " + targetVersion);
-            logInfo("moduleKind: " + module);
-            logInfo("sourceMap: " + sourceMap);
-            logInfo("verbose: " + verbose);
-            logInfo("jdkHome: " + jdkHome);
 
             JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
-            if (verbose) {
-                LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
-            }
+            LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 
             transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, candiesJsOut, classPath);
             transpiler.setTscWatchMode(false);
@@ -298,9 +526,13 @@ public class JSweetMojo extends AbstractMojo {
             return transpiler;
 
         } catch (Exception e) {
+
             getLog().error("failed to create transpiler", e);
+
             throw new MojoExecutionException("failed to create transpiler", e);
+
         }
+
     }
 
     private List<File> getCandiesJars(MavenProject project)
@@ -308,40 +540,92 @@ public class JSweetMojo extends AbstractMojo {
 
         @SuppressWarnings("unchecked")
         List<Dependency> dependencies = project.getDependencies();
-        logInfo("dependencies=" + dependencies);
 
-        // add artifacts of declared dependencies
+        getLog().info("dependencies=" + dependencies);
+
         List<Artifact> directDependencies = new LinkedList<>();
+
         for (Dependency dependency : dependencies) {
+
             Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
                     dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-            logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
+            getLog().info("add direct candy dependency: " + dependency + "=" + mavenArtifact);
 
             directDependencies.add(mavenArtifact);
+
         }
 
-        // lookup for transitive dependencies
         ArtifactResolutionResult dependenciesResolutionResult = resolver.resolveTransitively( //
-                new HashSet<>(directDependencies), //
-                project.getArtifact(), //
-                remoteRepositories, //
-                localRepository, //
+                new HashSet<>(directDependencies),
+                project.getArtifact(),
+                remoteRepositories,
+                localRepository,
                 metadataSource);
 
         @SuppressWarnings("unchecked")
         Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
-        logInfo("all candies artifacts: " + allDependenciesArtifacts);
 
-        // add dependencies files
+        getLog().info("all candies artifacts: " + allDependenciesArtifacts);
+
         List<File> dependenciesFiles = new LinkedList<>();
+
         for (ResolutionNode depResult : allDependenciesArtifacts) {
+
             dependenciesFiles.add(depResult.getArtifact().getFile());
+
         }
 
-        logInfo("candies jars: " + dependenciesFiles);
+        getLog().info("candies jars: " + dependenciesFiles);
 
         return dependenciesFiles;
     }
+
+    private class TranspilatorThread extends Thread {
+
+        private MavenProject project;
+
+        public TranspilatorThread(MavenProject project) {
+
+            setPriority(Thread.MAX_PRIORITY);
+
+            this.project = project;
+
+        }
+
+        public void run() {
+
+            for (; ; ) {
+
+                if (__Lock.tryLock()) {
+
+                    if (__RandomKeysTrigger.size() != 0) {
+
+                        __RandomKeysTrigger.removeLast();
+
+                        try {
+
+                            transpile(project);
+
+                        } catch (Exception exception) {
+
+                            getLog().info(exception.getMessage());
+
+                        }
+
+                    }
+
+                    __Lock.unlock();
+
+                }
+
+                Thread.currentThread().yield();
+
+            }
+
+        }
+
+    }
+
 
 }
