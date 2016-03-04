@@ -135,6 +135,8 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         initialize(project);
 
+        /* */
+
     }
 
     private void initialize(MavenProject project) {
@@ -619,7 +621,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 }
 
-                Thread.currentThread().yield();
+                yield();
 
             }
 
