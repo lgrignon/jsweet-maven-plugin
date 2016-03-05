@@ -1,5 +1,6 @@
 package org.jsweet;
 
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
@@ -38,11 +39,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  *
- * @author ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com -/- CODING IS AN ART
+ * @author EPOTH - ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  *
- * <p>
- *
- * On the fly transpilation ...
+ *  On the fly transpilation ...
  *
  */
 
@@ -78,6 +77,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     @Parameter(required = false, readonly = true)
     public String bundlesDirectory;
+
+    @Parameter(defaultValue = "HIGH", required = false, readonly = true)
+    public String watcherSensitivity;
 
     @Parameter(required = false, readonly = true)
     protected File candiesJsOut;
@@ -117,9 +119,15 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     private JSweetTranspiler transpiler;
 
+    private List<File> candiesJarDependenciesFiles;
+
+    private static SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
+
     /* */
 
     private static ReentrantLock __Lock = new ReentrantLock();
+
+    /* */
 
     private static LinkedList<String> __RandomKeysTrigger = new LinkedList<>();
 
@@ -130,6 +138,10 @@ public class JSweetWatchMojo extends AbstractMojo {
         Map<?, ?> ctx = getPluginContext();
 
         MavenProject project = (MavenProject) ctx.get("project");
+
+        /* */
+
+        transpiler = createJSweetTranspiler(project);
 
         /* */
 
@@ -159,29 +171,21 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 /* */
 
-                for (String sourceDirectory : sourcePaths) {
-
-                    Path path = Paths.get(sourceDirectory);
-
-                    watchedPaths.add(path);
-
-                    walkDirectoryTree(path, watchedPaths);
-
-                }
-
                 getLog().info("- Done  ...");
 
                 /* */
 
                 getLog().info("- Registering path");
 
-                for (Path path : watchedPaths) {
+                for (String sourceDirectory : sourcePaths) {
 
-                    getLog().info("  + Adding [" + path.toString() + "]");
+                    Path path = Paths.get(sourceDirectory);
+
+                    watchedPaths.add(path);
+
+                    walkDirectoryTree(path, watchedPaths, watchService);
 
                 }
-
-                registerPaths(watchedPaths, watchService);
 
                 /* */
 
@@ -191,7 +195,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 getLog().info("- Starting transpilator process  ... ");
 
-                TranspilatorThread T = new TranspilatorThread(project);
+                TranspilatorThread T = new TranspilatorThread(this, project);
 
                 T.start();
 
@@ -203,7 +207,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 try {
 
-                    watch(watchService, project);
+                    watch(watchService);
 
                 } catch (Exception exception) {
 
@@ -228,9 +232,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     /* */
 
-    private void walkDirectoryTree(Path startPath, List<Path> watchedPaths) throws IOException {
+    private void walkDirectoryTree(Path startPath, List<Path> watchedPaths, WatchService watchService) throws IOException {
 
-        FileTreeScanner scanner = new FileTreeScanner(watchedPaths);
+        RegisteringFileTreeScanner scanner = new RegisteringFileTreeScanner(watchedPaths, watchService, this);
 
         Files.walkFileTree(startPath, scanner);
 
@@ -238,33 +242,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     /* */
 
-    private void registerPaths(List<Path> paths, WatchService watchService) {
-
-        for (Path path : paths) {
-
-            try {
-
-                path.register(
-                        watchService,
-                        ENTRY_CREATE,
-                        ENTRY_DELETE,
-                        ENTRY_MODIFY,
-                        OVERFLOW
-                );
-
-            } catch (IOException ioException) {
-
-                getLog().error(ioException);
-
-            }
-
-        }
-
-    }
-
-    /* */
-
-    private void watch(WatchService watchService, MavenProject project) throws Exception {
+    private void watch(WatchService watchService) throws Exception {
 
         for (; ; ) {
 
@@ -300,7 +278,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                     __Lock.lock();
 
-                    __RandomKeysTrigger.add(String.valueOf((int) (10000 * Math.random()))); // generate a random entry
+                    __RandomKeysTrigger.add(generateRandomEntry()); // generate a random entry
 
                     __Lock.unlock();
 
@@ -334,13 +312,22 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     }
 
-    public static class FileTreeScanner extends SimpleFileVisitor<Path> {
+    private String generateRandomEntry() {
 
-        private List<Path> _directories;
+        return String.valueOf((int) (10000 * Math.random()));
+    }
 
-        public FileTreeScanner(List<Path> directories) {
+    public static class RegisteringFileTreeScanner extends SimpleFileVisitor<Path> {
 
-            _directories = directories;
+        private List<Path> directories;
+        private WatchService watchService;
+        private AbstractMojo mojo;
+
+        public RegisteringFileTreeScanner(List<Path> directories, WatchService watchService, AbstractMojo mojo) {
+
+            this.directories = directories;
+            this.watchService = watchService;
+            this.mojo = mojo;
 
         }
 
@@ -355,7 +342,27 @@ public class JSweetWatchMojo extends AbstractMojo {
         @Override
         public FileVisitResult postVisitDirectory(Path directory, IOException exc) {
 
-            _directories.add(directory);
+            directories.add(directory);
+
+            try {
+
+                directory.register(
+
+                        this.watchService,
+
+                        new WatchEvent.Kind[]{ ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW } ,
+
+                        SENSITIVITY_WATCH_EVENT_MODIFIER
+
+                );
+
+                this.mojo.getLog().info("  + Added [" + directory.toString() + "]");
+
+            } catch ( IOException ioException ) {
+
+                this.mojo.getLog().error("  * Cannot register [" + directory.toString() + "]");
+
+            }
 
             return CONTINUE;
         }
@@ -373,15 +380,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         try {
 
-            getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
-                    + JSweetConfig.getBuildDate() + ")");
+            ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(new ConsoleTranspilationHandler());
 
-
-            ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
-                    new ConsoleTranspilationHandler());
             try {
-
-                createJSweetTranspiler(project);
 
                 SourceFile[] sources = collectSourceFiles(project);
 
@@ -389,8 +390,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
             } catch (NoClassDefFoundError error) {
 
-                transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
-                        JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
+                transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null, JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
 
             }
 
@@ -400,12 +400,12 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
                         + transpilationHandler.getWarningCount() + " warning(s)");
+
             } else {
 
                 if (transpilationHandler.getWarningCount() > 0) {
 
-                    getLog().info(
-                            "transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
+                    getLog().info("transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
 
                 } else {
 
@@ -432,6 +432,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         getLog().info("source includes: " + ArrayUtils.toString(includes));
         getLog().info("source excludes: " + ArrayUtils.toString(excludes));
+
         getLog().info("sources paths: " + sourcePaths);
 
         List<SourceFile> sources = new LinkedList<>();
@@ -441,7 +442,9 @@ public class JSweetWatchMojo extends AbstractMojo {
             DirectoryScanner dirScanner = new DirectoryScanner();
 
             dirScanner.setBasedir(new File(sourcePath));
+
             dirScanner.setIncludes(includes);
+
             dirScanner.setExcludes(excludes);
 
             dirScanner.scan();
@@ -513,6 +516,7 @@ public class JSweetWatchMojo extends AbstractMojo {
             LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 
             transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, candiesJsOut, classPath);
+
             transpiler.setTscWatchMode(false);
             transpiler.setEcmaTargetVersion(targetVersion);
             transpiler.setModuleKind(module);
@@ -523,6 +527,7 @@ public class JSweetWatchMojo extends AbstractMojo {
             transpiler.setNoRootDirectories(noRootDirectories);
             transpiler.setIgnoreAssertions(!enableAssertions);
             transpiler.setGenerateDeclarations(declaration);
+
             transpiler.setDeclarationsOutputDir(declarationOutDir);
 
             return transpiler;
@@ -586,16 +591,30 @@ public class JSweetWatchMojo extends AbstractMojo {
     private class TranspilatorThread extends Thread {
 
         private MavenProject project;
+        private AbstractMojo mojo;
 
-        public TranspilatorThread(MavenProject project) {
+        public TranspilatorThread(AbstractMojo mojo, MavenProject project) {
 
             setPriority(Thread.MAX_PRIORITY);
 
             this.project = project;
 
+            this.mojo = mojo;
+
         }
 
         public void run() {
+
+            this.mojo.getLog().info("- Transpilator process started ...");
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.append("- JSweet transpiler version ");
+            stringBuilder.append(JSweetConfig.getVersionNumber());
+            stringBuilder.append(" (build date: ");
+            stringBuilder.append(JSweetConfig.getBuildDate()).append(")");
+
+            getLog().info(stringBuilder.toString());
 
             for (; ; ) {
 
