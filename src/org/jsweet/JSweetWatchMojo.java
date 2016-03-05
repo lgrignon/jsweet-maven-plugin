@@ -121,6 +121,8 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     private List<File> candiesJarDependenciesFiles;
 
+    private TranspilatorThread T;
+
     private static SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
 
     /* */
@@ -145,6 +147,14 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         /* */
 
+        getLog().info("- Starting transpilator process  ... ");
+
+        T = new TranspilatorThread(this, project);
+
+        T.start();
+
+        /* */
+
         initialize(project);
 
         /* */
@@ -152,8 +162,6 @@ public class JSweetWatchMojo extends AbstractMojo {
     }
 
     private void initialize(MavenProject project) {
-
-        getLog().info("- Searching for directory  ... ");
 
         /* */
 
@@ -171,11 +179,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 /* */
 
-                getLog().info("- Done  ...");
-
-                /* */
-
-                getLog().info("- Registering path");
+                getLog().info("+ Registering source path");
 
                 for (String sourceDirectory : sourcePaths) {
 
@@ -187,21 +191,15 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 }
 
+                getLog().info("- Registering source path , DONE ." );
+
                 /* */
 
                 getLog().info("");
 
                 /* */
 
-                getLog().info("- Starting transpilator process  ... ");
-
-                TranspilatorThread T = new TranspilatorThread(this, project);
-
-                T.start();
-
-                /* */
-
-                getLog().info("- Listening for file change   ... ");
+                getLog().info("- Listening for file change ... ");
 
                 /* */
 
@@ -356,7 +354,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 );
 
-                this.mojo.getLog().info("  + Added [" + directory.toString() + "]");
+                this.mojo.getLog().info("  - Added [" + directory.toString() + "]");
 
             } catch ( IOException ioException ) {
 
