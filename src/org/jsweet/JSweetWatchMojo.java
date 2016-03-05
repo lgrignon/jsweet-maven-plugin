@@ -39,9 +39,12 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
+ *
  * @author EPOTH - ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  *
- *  On the fly transpilation ...
+ * On the fly transpilation through maven .
+ *
+ * Very early version
  *
  */
 
