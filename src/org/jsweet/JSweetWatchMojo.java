@@ -40,8 +40,9 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * @author EPOTH - ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
- *         <p>
- *         On the fly transpilation ...
+ *
+ *  On the fly transpilation ...
+ *
  */
 
 @Mojo(name = "watch", defaultPhase = LifecyclePhase.TEST)
@@ -120,9 +121,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     private FastList<File> candiesJarDependenciesFiles;
 
-    private TranspilatorThread T;
+    private TranspilatorThread transpilatorThread;
 
-    private static SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
+    private static final SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
 
     /* */
 
@@ -148,9 +149,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         getLog().info("- Starting transpilator process  ... ");
 
-        T = new TranspilatorThread(this, project);
+        transpilatorThread = new TranspilatorThread(this, project);
 
-        T.start();
+        transpilatorThread.start();
 
         /* */
 
@@ -273,7 +274,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 if (kind == ENTRY_MODIFY || kind == ENTRY_CREATE || kind == ENTRY_DELETE) {
 
-                    getLog().info("* File change detected * " + filename);
+                    getLog().info("* File change detected *" + filename);
 
                     __Lock.lock();
 
