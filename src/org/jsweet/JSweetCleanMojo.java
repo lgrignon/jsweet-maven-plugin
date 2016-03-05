@@ -46,10 +46,14 @@ public class JSweetCleanMojo extends AbstractJSweetMojo {
 			FileUtils.deleteQuietly(jsOutDir);
 
 			File declarationsOutDir = getDeclarationsOutDir();
-			FileUtils.deleteQuietly(declarationsOutDir);
+			if (declarationsOutDir != null) {
+				FileUtils.deleteQuietly(declarationsOutDir);
+			}
 
-			FileUtils.deleteQuietly(candiesJsOut);
-
+			if (candiesJsOut != null) {
+				FileUtils.deleteQuietly(candiesJsOut);
+			}
+			
 			File workingDir = getTranspilerWorkingDirectory(project);
 			FileUtils.deleteQuietly(workingDir);
 		} catch (Exception e) {

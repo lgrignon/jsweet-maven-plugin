@@ -217,7 +217,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	protected File getJsOutDir() throws IOException {
 		File jsOutDir = null;
-		String jsOutputDirPath = "js";
+		String jsOutputDirPath = "target/js";
 		if (isNotBlank(this.outDir)) {
 			jsOutputDirPath = new File(this.outDir).getCanonicalPath();
 		}
@@ -226,7 +226,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	}
 
 	protected File getTsOutDir() throws IOException {
-		String tsOutputDirPath = ".ts";
+		String tsOutputDirPath = "target/ts";
 		if (isNotBlank(this.tsOut)) {
 			tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
 		}
