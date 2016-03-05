@@ -18,10 +18,8 @@ package org.jsweet;
 import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 import java.io.File;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -34,15 +32,29 @@ import org.apache.maven.project.MavenProject;
  * @author Louis Grignon
  */
 @Mojo(name = "clean", defaultPhase = LifecyclePhase.CLEAN)
-public class JSweetCleanMojo extends AbstractMojo {
+public class JSweetCleanMojo extends AbstractJSweetMojo {
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
 		getLog().info("cleaning jsweet working directory");
+		try {
+			MavenProject project = getMavenProject();
 
-		Map<?, ?> ctx = getPluginContext();
-		MavenProject project = (MavenProject) ctx.get("project");
+			File tsOutDir = getTsOutDir();
+			FileUtils.deleteQuietly(tsOutDir);
 
-		File workingDir = getTranspilerWorkingDirectory(project);
-		FileUtils.deleteQuietly(workingDir);
+			File jsOutDir = getJsOutDir();
+			FileUtils.deleteQuietly(jsOutDir);
+
+			File declarationsOutDir = getDeclarationsOutDir();
+			FileUtils.deleteQuietly(declarationsOutDir);
+
+			FileUtils.deleteQuietly(candiesJsOut);
+
+			File workingDir = getTranspilerWorkingDirectory(project);
+			FileUtils.deleteQuietly(workingDir);
+		} catch (Exception e) {
+			getLog().error("transpilation failed", e);
+			throw new MojoExecutionException("transpilation failed", e);
+		}
 	}
 }

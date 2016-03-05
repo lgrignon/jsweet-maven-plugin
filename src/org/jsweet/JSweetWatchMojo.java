@@ -1,665 +1,316 @@
 package org.jsweet;
 
-import com.sun.nio.file.SensitivityWatchEventModifier;
-import javolution.util.FastList;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
-import org.apache.maven.artifact.repository.ArtifactRepository;
-import org.apache.maven.artifact.resolver.*;
-import org.apache.maven.model.Dependency;
+import static java.nio.file.FileVisitResult.CONTINUE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
+
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.util.DirectoryScanner;
-import org.jsweet.transpiler.*;
-import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
-import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
+import org.jsweet.transpiler.JSweetTranspiler;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.*;
-import java.util.concurrent.locks.ReentrantLock;
-
-import static java.nio.file.StandardWatchEventKinds.*;
-
-import static java.nio.file.FileVisitResult.*;
-import static java.util.stream.Collectors.joining;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 
 /**
  *
  * @author EPOTH - ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
+ * @author Louis Grignon On the fly transpilation through maven .
  *
- * On the fly transpilation through maven .
- *
- * Very early version
+ *         Very early version
  *
  */
-
 @Mojo(name = "watch", defaultPhase = LifecyclePhase.TEST)
-public class JSweetWatchMojo extends AbstractMojo {
+public class JSweetWatchMojo extends AbstractJSweetMojo {
 
-    @Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
-    public EcmaScriptComplianceLevel targetVersion;
+	@Parameter(defaultValue = "HIGH", required = false, readonly = true)
+	public String watcherSensitivity;
 
-    @Parameter(defaultValue = "none", required = false, readonly = true)
-    public ModuleKind module;
+	private TranspilatorThread transpilatorThread;
 
-    @Parameter(readonly = true)
-    public String outDir;
+	private static final SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
 
-    @Parameter(readonly = true)
-    public String tsOut;
+	private static ReentrantLock __Lock = new ReentrantLock();
 
-    @Parameter(required = false, readonly = true)
-    public boolean bundle;
+	private static LinkedList<String> __RandomKeysTrigger = new LinkedList<>();
 
-    @Parameter(defaultValue = "false", required = false, readonly = true)
-    public boolean declaration;
+	private JSweetTranspiler transpiler;
 
-    @Parameter(readonly = true)
-    public String dtsOut;
+	public void execute() throws MojoFailureException, MojoExecutionException {
 
-    @Parameter(defaultValue = "false", required = false, readonly = true)
-    public boolean sourceMap;
+		MavenProject project = getMavenProject();
 
-    @Parameter(defaultValue = "false", required = false, readonly = true)
-    public boolean verbose;
+		transpiler = createJSweetTranspiler(project);
 
-    @Parameter(required = false, readonly = true)
-    public String bundlesDirectory;
+		getLog().info("- Starting transpilator process  ... ");
 
-    @Parameter(defaultValue = "HIGH", required = false, readonly = true)
-    public String watcherSensitivity;
+		transpilatorThread = new TranspilatorThread(this, project);
+		transpilatorThread.start();
 
-    @Parameter(required = false, readonly = true)
-    protected File candiesJsOut;
+		initialize(project);
+	}
 
-    @Parameter
-    public String[] includes;
+	private void initialize(MavenProject project) {
 
-    @Parameter
-    public String[] excludes;
+		/* */
 
-    @Parameter(defaultValue = "UTF-8", required = false)
-    public String encoding;
+		@SuppressWarnings("unchecked")
+		List<String> sourcePaths = project.getCompileSourceRoots();
 
-    @Parameter(defaultValue = "false", required = false)
-    public boolean noRootDirectories;
+		try {
 
-    @Parameter(defaultValue = "false", required = false)
-    public boolean enableAssertions;
+			for (;;) {
 
-    @Parameter(defaultValue = "${java.home}")
-    protected File jdkHome;
+				/* */
 
-    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
-    protected ArtifactRepository localRepository;
+				WatchService watchService = FileSystems.getDefault().newWatchService();
 
-    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true)
-    private List<ArtifactRepository> remoteRepositories;
+				List<Path> watchedPaths = new ArrayList<>();
 
-    @Component
-    private ArtifactFactory artifactFactory;
+				/* */
 
-    @Component
-    private ArtifactResolver resolver;
+				getLog().info("+ Registering source path");
 
-    @Component
-    private ArtifactMetadataSource metadataSource;
+				for (String sourceDirectory : sourcePaths) {
+					Path path = Paths.get(sourceDirectory);
+					watchedPaths.add(path);
+					walkDirectoryTree(path, watchedPaths, watchService);
+				}
 
-    private JSweetTranspiler transpiler;
+				getLog().info("- Registering source path , DONE .");
 
-    private FastList<File> candiesJarDependenciesFiles;
+				/* */
 
-    private TranspilatorThread transpilatorThread;
+				getLog().info("");
 
-    private static final SensitivityWatchEventModifier SENSITIVITY_WATCH_EVENT_MODIFIER = SensitivityWatchEventModifier.HIGH;
+				/* */
 
-    /* */
+				getLog().info("- Listening for file change ... ");
 
-    private static ReentrantLock __Lock = new ReentrantLock();
+				/* */
 
-    /* */
+				try {
+					watch(watchService);
+				} catch (Exception exception) {
+					watchService.close();
+				}
 
-    private static LinkedList<String> __RandomKeysTrigger = new LinkedList<>();
+				/* */
 
-    /* */
+				Thread.yield();
 
-    public void execute() throws MojoFailureException, MojoExecutionException {
+				/* */
 
-        Map<?, ?> ctx = getPluginContext();
+			}
 
-        MavenProject project = (MavenProject) ctx.get("project");
+			/* */
 
-        /* */
+		} catch (IOException ioException) {
 
-        transpiler = createJSweetTranspiler(project);
+			getLog().error(ioException);
 
-        /* */
+		}
+	}
 
-        getLog().info("- Starting transpilator process  ... ");
+	/* */
 
-        transpilatorThread = new TranspilatorThread(this, project);
+	private void walkDirectoryTree(Path startPath, List<Path> watchedPaths, WatchService watchService)
+			throws IOException {
 
-        transpilatorThread.start();
+		RegisteringFileTreeScanner scanner = new RegisteringFileTreeScanner(watchedPaths, watchService, this);
 
-        /* */
+		Files.walkFileTree(startPath, scanner);
 
-        initialize(project);
+	}
 
-        /* */
+	/* */
 
-    }
+	private void watch(WatchService watchService) throws Exception {
 
-    private void initialize(MavenProject project) {
+		for (;;) {
 
-        /* */
+			WatchKey key;
 
-        List<String> sourcePaths = project.getCompileSourceRoots();
+			try {
 
-        try {
+				key = watchService.take();
 
-            for (; ; ) {
+			} catch (InterruptedException x) {
 
-                /* */
+				return;
 
-                WatchService watchService = FileSystems.getDefault().newWatchService();
+			}
 
-                List<Path> watchedPaths = new ArrayList<>();
+			for (WatchEvent<?> event : key.pollEvents()) {
 
-                /* */
+				WatchEvent.Kind<?> kind = event.kind();
 
-                getLog().info("+ Registering source path");
+				if (kind == OVERFLOW) {
+					continue;
+				}
 
-                for (String sourceDirectory : sourcePaths) {
+				@SuppressWarnings("unchecked")
+				WatchEvent<Path> ev = (WatchEvent<Path>) event;
 
-                    Path path = Paths.get(sourceDirectory);
+				Path filename = ev.context();
+				if (kind == ENTRY_MODIFY || kind == ENTRY_CREATE || kind == ENTRY_DELETE) {
 
-                    watchedPaths.add(path);
+					getLog().info("* File change detected *" + filename);
 
-                    walkDirectoryTree(path, watchedPaths, watchService);
+					__Lock.lock();
 
-                }
+					__RandomKeysTrigger.add(generateRandomEntry()); // generate
+																	// a random
+																	// entry
 
-                getLog().info("- Registering source path , DONE .");
+					__Lock.unlock();
 
-                /* */
+				}
 
-                getLog().info("");
+			}
 
-                /* */
+			boolean valid = key.reset();
+			if (!valid) {
+				break;
+			}
+		}
 
-                getLog().info("- Listening for file change ... ");
+		/* */
 
-                /* */
+		try {
+			watchService.close();
+		} catch (IOException ioException) {
+			getLog().error(ioException);
+		}
 
-                try {
+		/* */
+	}
 
-                    watch(watchService);
+	private String generateRandomEntry() {
 
-                } catch (Exception exception) {
+		return String.valueOf((int) (10000 * Math.random()));
+	}
 
-                    watchService.close();
+	public static class RegisteringFileTreeScanner extends SimpleFileVisitor<Path> {
 
-                }
+		private List<Path> directories;
+		private WatchService watchService;
+		private AbstractMojo mojo;
 
-                /* */
+		public RegisteringFileTreeScanner(List<Path> directories, WatchService watchService, AbstractMojo mojo) {
 
-                Thread.currentThread().yield();
+			this.directories = directories;
+			this.watchService = watchService;
+			this.mojo = mojo;
 
-                /* */
+		}
 
-            }
+		@Override
+		public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
 
-            /* */
+			// --> DO NOTHING
 
-        } catch (IOException ioException) {
+			return CONTINUE;
+		}
 
-            getLog().error(ioException);
+		@Override
+		public FileVisitResult postVisitDirectory(Path directory, IOException exc) {
 
-        }
-    }
+			directories.add(directory);
 
-    /* */
+			try {
 
-    private void walkDirectoryTree(Path startPath, List<Path> watchedPaths, WatchService watchService) throws IOException {
+				directory.register(
 
-        RegisteringFileTreeScanner scanner = new RegisteringFileTreeScanner(watchedPaths, watchService, this);
+				this.watchService,
 
-        Files.walkFileTree(startPath, scanner);
+				new WatchEvent.Kind[] { ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW },
 
-    }
+				SENSITIVITY_WATCH_EVENT_MODIFIER
 
-    /* */
+				);
 
-    private void watch(WatchService watchService) throws Exception {
+				this.mojo.getLog().info("  - Added [" + directory.toString() + "]");
 
-        for (; ; ) {
+			} catch (IOException ioException) {
 
-            WatchKey key;
+				this.mojo.getLog().error("  * Cannot register [" + directory.toString() + "]");
 
-            try {
+			}
 
-                key = watchService.take();
+			return CONTINUE;
+		}
 
-            } catch (InterruptedException x) {
+		@Override
+		public FileVisitResult visitFileFailed(Path file, IOException exc) {
 
-                return;
+			// --> DO NOTHING
 
-            }
+			return CONTINUE;
+		}
+	}
 
-            for (WatchEvent<?> event : key.pollEvents()) {
+	private class TranspilatorThread extends Thread {
 
-                WatchEvent.Kind<?> kind = event.kind();
+		private MavenProject project;
+		private AbstractMojo mojo;
 
-                if (kind == OVERFLOW) {
+		public TranspilatorThread(AbstractMojo mojo, MavenProject project) {
+			setPriority(Thread.MAX_PRIORITY);
+			this.project = project;
+			this.mojo = mojo;
+		}
 
-                    continue;
+		public void run() {
 
-                }
+			this.mojo.getLog().info("- Transpilator process started ...");
 
-                WatchEvent<Path> ev = (WatchEvent<Path>) event;
+			StringBuilder stringBuilder = new StringBuilder();
 
-                Path filename = ev.context();
+			stringBuilder.append("- JSweet transpiler version ");
+			stringBuilder.append(JSweetConfig.getVersionNumber());
+			stringBuilder.append(" (build date: ");
+			stringBuilder.append(JSweetConfig.getBuildDate()).append(")");
 
-                if (kind == ENTRY_MODIFY || kind == ENTRY_CREATE || kind == ENTRY_DELETE) {
+			getLog().info(stringBuilder.toString());
 
-                    getLog().info("* File change detected *" + filename);
+			for (;;) {
 
-                    __Lock.lock();
+				if (__Lock.tryLock()) {
 
-                    __RandomKeysTrigger.add(generateRandomEntry()); // generate a random entry
-
-                    __Lock.unlock();
-
-                }
-
-            }
-
-            boolean valid = key.reset();
-
-            if (!valid) {
-
-                break;
-
-            }
-
-        }
-
-        /* */
-
-        try {
-
-            watchService.close();
-
-        } catch (IOException ioException) {
-
-            getLog().error(ioException);
-
-        }
-
-        /* */
-
-    }
-
-    private String generateRandomEntry() {
-
-        return String.valueOf((int) (10000 * Math.random()));
-    }
-
-    public static class RegisteringFileTreeScanner extends SimpleFileVisitor<Path> {
-
-        private List<Path> directories;
-        private WatchService watchService;
-        private AbstractMojo mojo;
-
-        public RegisteringFileTreeScanner(List<Path> directories, WatchService watchService, AbstractMojo mojo) {
-
-            this.directories = directories;
-            this.watchService = watchService;
-            this.mojo = mojo;
-
-        }
-
-        @Override
-        public FileVisitResult visitFile(Path file, BasicFileAttributes attr) {
-
-            //--> DO NOTHING
-
-            return CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult postVisitDirectory(Path directory, IOException exc) {
-
-            directories.add(directory);
-
-            try {
-
-                directory.register(
-
-                        this.watchService,
-
-                        new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
-
-                        SENSITIVITY_WATCH_EVENT_MODIFIER
-
-                );
-
-                this.mojo.getLog().info("  - Added [" + directory.toString() + "]");
-
-            } catch (IOException ioException) {
-
-                this.mojo.getLog().error("  * Cannot register [" + directory.toString() + "]");
-
-            }
-
-            return CONTINUE;
-        }
-
-        @Override
-        public FileVisitResult visitFileFailed(Path file, IOException exc) {
-
-            //--> DO NOTHING
-
-            return CONTINUE;
-        }
-    }
-
-    public void transpile(MavenProject project) throws MojoFailureException, MojoExecutionException {
-
-        try {
-
-            ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(new ConsoleTranspilationHandler());
-
-            try {
-
-                SourceFile[] sources = collectSourceFiles(project);
-
-                transpiler.transpile(transpilationHandler, sources);
-
-            } catch (NoClassDefFoundError noClassDefFoundError) {
-
-                transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null, JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
-
-            }
-
-            int errorCount = transpilationHandler.getErrorCount();
-
-            if (errorCount > 0) {
-
-                StringBuilder stringBuilder = new StringBuilder();
-
-                stringBuilder.append("transpilation failed with ");
-                stringBuilder.append(errorCount);
-                stringBuilder.append(" error(s) and ");
-                stringBuilder.append(transpilationHandler.getWarningCount());
-                stringBuilder.append(" warning(s)");
-
-                throw new MojoFailureException(stringBuilder.toString());
-
-            } else {
-
-                if (transpilationHandler.getWarningCount() > 0) {
-
-                    getLog().info("transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
-
-                } else {
-
-                    getLog().info("transpilation successfully completed with no errors and no warnings");
-
-                }
-
-            }
-
-        } catch (Exception e) {
-
-            getLog().error("transpilation failed", e);
-
-            throw new MojoExecutionException("transpilation failed", e);
-
-        }
-
-    }
-
-    private SourceFile[] collectSourceFiles(MavenProject project) {
-
-        List<String> sourcePaths = project.getCompileSourceRoots();
-
-        getLog().info("- source includes: " + ArrayUtils.toString(includes));
-        getLog().info("- source excludes: " + ArrayUtils.toString(excludes));
-
-        getLog().info("- sources paths: " + sourcePaths);
-
-        List<SourceFile> sources = new FastList<>();
-
-        String sourcePath = "";
-
-        for (int i = 0, j = sourcePaths.size(); i < j; i++) {
-
-            sourcePath = sourcePaths.get(i);
-
-            DirectoryScanner dirScanner = new DirectoryScanner();
-
-            dirScanner.setBasedir(new File(sourcePath));
-
-            dirScanner.setIncludes(includes);
-
-            dirScanner.setExcludes(excludes);
-
-            dirScanner.scan();
-
-            for (String includedPath : dirScanner.getIncludedFiles()) {
-
-                if (includedPath.endsWith(".java")) {
-
-                    sources.add(new SourceFile(new File(sourcePath, includedPath)));
-
-                }
-
-            }
-
-        }
-
-        getLog().info("- sourceFiles=" + sources);
-
-        return sources.toArray(new SourceFile[0]);
-
-    }
-
-    private JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
-
-        try {
-
-            List<File> dependenciesFiles = getCandiesJars(project);
-
-            String classPath = dependenciesFiles.stream()
-                    .map(f -> f.getAbsolutePath())
-                    .collect(joining(System.getProperty("path.separator")));
-
-            String tsOutputDirPath = ".ts";
-
-            if (isNotBlank(this.tsOut)) {
-
-                tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
-
-            }
-
-            File jsOutDir = null;
-
-            String jsOutputDirPath = "js";
-
-            if (isNotBlank(this.outDir)) {
-
-                jsOutputDirPath = new File(this.outDir).getCanonicalPath();
-
-            }
-
-            jsOutDir = new File(jsOutputDirPath);
-
-            File declarationOutDir = null;
-
-            if (isNotBlank(this.dtsOut)) {
-
-                declarationOutDir = new File(this.dtsOut).getCanonicalFile();
-
-            }
-
-            if (bundlesDirectory != null) {
-
-                getLog().info("- bundlesDirectory: " + bundlesDirectory);
-
-            }
-
-            JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
-
-            LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
-
-            transpiler = new JSweetTranspiler(new File(tsOutputDirPath), jsOutDir, candiesJsOut, classPath);
-
-            transpiler.setTscWatchMode(false);
-            transpiler.setEcmaTargetVersion(targetVersion);
-            transpiler.setModuleKind(module);
-            transpiler.setBundle(bundle);
-            transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
-            transpiler.setPreserveSourceLineNumbers(sourceMap);
-            transpiler.setEncoding(encoding);
-            transpiler.setNoRootDirectories(noRootDirectories);
-            transpiler.setIgnoreAssertions(!enableAssertions);
-            transpiler.setGenerateDeclarations(declaration);
-
-            transpiler.setDeclarationsOutputDir(declarationOutDir);
-
-            return transpiler;
-
-        } catch (Exception e) {
-
-            getLog().error("* failed to create transpiler *", e);
-
-            throw new MojoExecutionException("* failed to create transpiler *", e);
-
-        }
-
-    }
-
-    private List<File> getCandiesJars(MavenProject project)
-            throws ArtifactResolutionException, ArtifactNotFoundException {
-
-        @SuppressWarnings("unchecked")
-        List<Dependency> dependencies = project.getDependencies();
-
-        getLog().info("- Dependencies=" + dependencies);
-
-        List<Artifact> directDependencies = new FastList<>();
-
-        for (Dependency dependency : dependencies) {
-
-            Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
-                    dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
-
-            getLog().info("- Add direct candy dependency: " + dependency + "=" + mavenArtifact);
-
-            directDependencies.add(mavenArtifact);
-
-        }
-
-        ArtifactResolutionResult dependenciesResolutionResult = resolver.resolveTransitively( //
-                new HashSet<>(directDependencies),
-                project.getArtifact(),
-                remoteRepositories,
-                localRepository,
-                metadataSource);
-
-        @SuppressWarnings("unchecked")
-        Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
-
-        getLog().info("- All candies artifacts: " + allDependenciesArtifacts);
-
-        List<File> dependenciesFiles = new LinkedList<>();
-
-        for (ResolutionNode depResult : allDependenciesArtifacts) {
-
-            dependenciesFiles.add(depResult.getArtifact().getFile());
-
-        }
-
-        getLog().info("- Candies jars: " + dependenciesFiles);
-
-        return dependenciesFiles;
-    }
-
-    private class TranspilatorThread extends Thread {
-
-        private MavenProject project;
-        private AbstractMojo mojo;
-
-        public TranspilatorThread(AbstractMojo mojo, MavenProject project) {
-
-            setPriority(Thread.MAX_PRIORITY);
-
-            this.project = project;
-
-            this.mojo = mojo;
-
-        }
-
-        public void run() {
-
-            this.mojo.getLog().info("- Transpilator process started ...");
-
-            StringBuilder stringBuilder = new StringBuilder();
-
-            stringBuilder.append("- JSweet transpiler version ");
-            stringBuilder.append(JSweetConfig.getVersionNumber());
-            stringBuilder.append(" (build date: ");
-            stringBuilder.append(JSweetConfig.getBuildDate()).append(")");
-
-            getLog().info(stringBuilder.toString());
-
-            for (;;) {
-
-                if (__Lock.tryLock()) {
-
-                    if (__RandomKeysTrigger.size() != 0) {
-
-                        __RandomKeysTrigger.removeLast();
-
-                        try {
-
-                            transpile(project);
-
-                        } catch ( Exception exception ) {
-
-                            getLog().info(exception.getMessage());
-
-                        }
-
-                    }
-
-                    __Lock.unlock();
-
-                }
-
-                yield();
-
-            }
-
-        }
-
-    }
-
-
+					if (__RandomKeysTrigger.size() != 0) {
+						__RandomKeysTrigger.removeLast();
+						try {
+							transpile(project, transpiler);
+						} catch (Exception exception) {
+							getLog().info(exception.getMessage());
+						}
+					}
+					__Lock.unlock();
+				}
+				yield();
+			}
+		}
+	}
 }
