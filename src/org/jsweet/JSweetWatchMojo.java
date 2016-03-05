@@ -217,6 +217,8 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 Thread.currentThread().yield();
 
+                /* */
+
             }
 
             /* */
