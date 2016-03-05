@@ -58,7 +58,7 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 The configuration options of the plugin:
 
 Name     |    Type       | Values | Default | Example
--------- | ------------- | ------ | ------- | ------- 
+-------- | ------------- | ------ | ------- | -------
 targetVersion | enum | ES3, ES5, ES6 | ES3 | ``` <targetVersion>ES3</targetVersion> ```
 module | enum | commonjs, amd, system, umd | none | ```<module>commonjs</module>```
 outDir | string | JS files output directory | .jsweet/js | ```<outDir>js</outDir>```
@@ -83,7 +83,7 @@ Then, just run the maven command line as usual:
 $ mvn generate-sources -P client
 ```
 
-You can use the plugin with profiles in order to transpile differently several parts of 
+You can use the plugin with profiles in order to transpile differently several parts of
 your application. For instance, a node server and a HTML5 client app:
 ```xml
 <profiles>
@@ -153,3 +153,7 @@ your application. For instance, a node server and a HTML5 client app:
 	</profile>
 </profiles>
 ```
+
+
+
+
