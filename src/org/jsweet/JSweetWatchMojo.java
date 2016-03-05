@@ -1,6 +1,7 @@
 package org.jsweet;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import javolution.util.FastList;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
@@ -38,11 +39,9 @@ import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
- *
  * @author EPOTH - ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
- *
- *  On the fly transpilation ...
- *
+ *         <p>
+ *         On the fly transpilation ...
  */
 
 @Mojo(name = "watch", defaultPhase = LifecyclePhase.TEST)
@@ -119,7 +118,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     private JSweetTranspiler transpiler;
 
-    private List<File> candiesJarDependenciesFiles;
+    private FastList<File> candiesJarDependenciesFiles;
 
     private TranspilatorThread T;
 
@@ -191,7 +190,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 }
 
-                getLog().info("- Registering source path , DONE ." );
+                getLog().info("- Registering source path , DONE .");
 
                 /* */
 
@@ -350,7 +349,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                         this.watchService,
 
-                        new WatchEvent.Kind[]{ ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW } ,
+                        new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
 
                         SENSITIVITY_WATCH_EVENT_MODIFIER
 
@@ -358,7 +357,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 this.mojo.getLog().info("  - Added [" + directory.toString() + "]");
 
-            } catch ( IOException ioException ) {
+            } catch (IOException ioException) {
 
                 this.mojo.getLog().error("  * Cannot register [" + directory.toString() + "]");
 
@@ -388,7 +387,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                 transpiler.transpile(transpilationHandler, sources);
 
-            } catch (NoClassDefFoundError error) {
+            } catch (NoClassDefFoundError noClassDefFoundError) {
 
                 transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null, JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
 
@@ -398,8 +397,15 @@ public class JSweetWatchMojo extends AbstractMojo {
 
             if (errorCount > 0) {
 
-                throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
-                        + transpilationHandler.getWarningCount() + " warning(s)");
+                StringBuilder stringBuilder = new StringBuilder();
+
+                stringBuilder.append("transpilation failed with ");
+                stringBuilder.append(errorCount);
+                stringBuilder.append(" error(s) and ");
+                stringBuilder.append(transpilationHandler.getWarningCount());
+                stringBuilder.append(" warning(s)");
+
+                throw new MojoFailureException(stringBuilder.toString());
 
             } else {
 
@@ -427,17 +433,20 @@ public class JSweetWatchMojo extends AbstractMojo {
 
     private SourceFile[] collectSourceFiles(MavenProject project) {
 
-        @SuppressWarnings("unchecked")
         List<String> sourcePaths = project.getCompileSourceRoots();
 
-        getLog().info("source includes: " + ArrayUtils.toString(includes));
-        getLog().info("source excludes: " + ArrayUtils.toString(excludes));
+        getLog().info("- source includes: " + ArrayUtils.toString(includes));
+        getLog().info("- source excludes: " + ArrayUtils.toString(excludes));
 
-        getLog().info("sources paths: " + sourcePaths);
+        getLog().info("- sources paths: " + sourcePaths);
 
-        List<SourceFile> sources = new LinkedList<>();
+        List<SourceFile> sources = new FastList<>();
 
-        for (String sourcePath : sourcePaths) {
+        String sourcePath = "";
+
+        for (int i = 0, j = sourcePaths.size(); i < j; i++) {
+
+            sourcePath = sourcePaths.get(i);
 
             DirectoryScanner dirScanner = new DirectoryScanner();
 
@@ -461,7 +470,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         }
 
-        getLog().info("sourceFiles=" + sources);
+        getLog().info("- sourceFiles=" + sources);
 
         return sources.toArray(new SourceFile[0]);
 
@@ -507,7 +516,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
             if (bundlesDirectory != null) {
 
-                getLog().info("bundlesDirectory: " + bundlesDirectory);
+                getLog().info("- bundlesDirectory: " + bundlesDirectory);
 
             }
 
@@ -534,9 +543,9 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         } catch (Exception e) {
 
-            getLog().error("failed to create transpiler", e);
+            getLog().error("* failed to create transpiler *", e);
 
-            throw new MojoExecutionException("failed to create transpiler", e);
+            throw new MojoExecutionException("* failed to create transpiler *", e);
 
         }
 
@@ -548,16 +557,16 @@ public class JSweetWatchMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         List<Dependency> dependencies = project.getDependencies();
 
-        getLog().info("dependencies=" + dependencies);
+        getLog().info("- Dependencies=" + dependencies);
 
-        List<Artifact> directDependencies = new LinkedList<>();
+        List<Artifact> directDependencies = new FastList<>();
 
         for (Dependency dependency : dependencies) {
 
             Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
                     dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-            getLog().info("add direct candy dependency: " + dependency + "=" + mavenArtifact);
+            getLog().info("- Add direct candy dependency: " + dependency + "=" + mavenArtifact);
 
             directDependencies.add(mavenArtifact);
 
@@ -573,7 +582,7 @@ public class JSweetWatchMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
 
-        getLog().info("all candies artifacts: " + allDependenciesArtifacts);
+        getLog().info("- All candies artifacts: " + allDependenciesArtifacts);
 
         List<File> dependenciesFiles = new LinkedList<>();
 
@@ -583,7 +592,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
         }
 
-        getLog().info("candies jars: " + dependenciesFiles);
+        getLog().info("- Candies jars: " + dependenciesFiles);
 
         return dependenciesFiles;
     }
@@ -616,7 +625,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
             getLog().info(stringBuilder.toString());
 
-            for (; ; ) {
+            for (;;) {
 
                 if (__Lock.tryLock()) {
 
@@ -628,7 +637,7 @@ public class JSweetWatchMojo extends AbstractMojo {
 
                             transpile(project);
 
-                        } catch (Exception exception) {
+                        } catch ( Exception exception ) {
 
                             getLog().info(exception.getMessage());
 
