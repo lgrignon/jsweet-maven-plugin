@@ -116,11 +116,11 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
     )
             throws IOException {
 
-        RegisteringFileTreeScanner scanner = new RegisteringFileTreeScanner(watchedPaths, watchService, this);
+        RegisteringFileVisitor visitor = new RegisteringFileVisitor(watchedPaths, watchService, this);
 
-        scanner.setSensitivity(SensitivityWatchEventModifier.HIGH);
+        visitor.setSensitivity(SensitivityWatchEventModifier.HIGH);
 
-        Files.walkFileTree(startPath, scanner);
+        Files.walkFileTree(startPath, visitor);
 
     }
 

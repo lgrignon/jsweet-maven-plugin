@@ -15,7 +15,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  */
 
-public class RegisteringFileTreeScanner extends SimpleFileVisitor<Path> {
+public class RegisteringFileVisitor extends SimpleFileVisitor<Path> {
 
     private List<Path> directories;
     private WatchService watchService;
@@ -23,7 +23,7 @@ public class RegisteringFileTreeScanner extends SimpleFileVisitor<Path> {
 
     private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
 
-    public RegisteringFileTreeScanner(List<Path> directories, WatchService watchService, AbstractMojo mojo) {
+    public RegisteringFileVisitor(List<Path> directories, WatchService watchService, AbstractMojo mojo) {
 
         this.directories = directories;
         this.watchService = watchService;
