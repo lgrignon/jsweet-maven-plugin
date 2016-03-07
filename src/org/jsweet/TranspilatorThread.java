@@ -31,11 +31,11 @@ public class TranspilatorThread extends TickThread {
 
     public void onRun() {
 
-        getLog().info("- Transpiler thread started ...");
+        getLog().info("Transpiler thread started ...");
 
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("- JSweet transpiler version ");
+        stringBuilder.append("JSweet transpiler version ");
         stringBuilder.append(JSweetConfig.getVersionNumber());
         stringBuilder.append(" (build date: ");
         stringBuilder.append(JSweetConfig.getBuildDate()).append(")");
