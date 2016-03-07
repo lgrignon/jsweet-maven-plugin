@@ -259,9 +259,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             int i = 0, j = 0, k = 0, l = 0, m = 0, n = 0;
 
-            for (i = 0, j = sourcePaths.size(); i < j; i++) {
-
-                String sourcePath = sourcePaths.get(i);
+            for (String sourcePath : sourcePaths) {
 
                 getLog().info("     - Analysing " + sourcePath);
 
