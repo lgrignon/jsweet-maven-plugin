@@ -413,6 +413,8 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         }
 
+        jsweetKey.reset();
+
         return 0;
 
     }
@@ -454,7 +456,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             }
 
-                /* */
+            /* */
 
             if (kind == ENTRY_CREATE) {
 
@@ -474,7 +476,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             }
 
-                /* */
+            /* */
 
             if (kind == ENTRY_DELETE) {
 
@@ -485,6 +487,8 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
             }
 
         }
+
+        jettyKey.reset();
 
         return 0;
     }
