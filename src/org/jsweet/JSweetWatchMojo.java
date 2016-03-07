@@ -64,7 +64,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
                 @SuppressWarnings("unchecked")
                 List<String> sourcePaths = project.getCompileSourceRoots();
 
-                getLog().info("+ Updating watcher source paths");
+                getLog().info("Updating watcher source paths");
 
                 List<Path> watchedPaths = new ArrayList<>();
 
@@ -125,8 +125,6 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
                 }
 
                 /* */
-
-                getLog().info("     - Creating watcher");
 
                 WatchService watchService = FileSystems.getDefault().newWatchService();
 
@@ -190,7 +188,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
     private void watch(WatchService watchService) {
 
-        getLog().info("- Now waiting for file change");
+        getLog().info("Now waiting for file change");
 
         for (; ; ) {
 
@@ -227,7 +225,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     if (isJavaFile(filename.toString())) {
 
-                        getLog().info("- File change detected * " + filename);
+                        getLog().info("File change detected * " + filename);
 
                         transpilatorThread.tick();
 
@@ -241,13 +239,13 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     if (isJavaFile(filename.toString())) {
 
-                        getLog().info("- File change detected ! " + filename);
+                        getLog().info("File change detected ! " + filename);
 
                         transpilatorThread.tick();
 
                     } else {
 
-                        getLog().info("- New directory added");
+                        getLog().info("New directory added");
 
                         return;
 
@@ -259,7 +257,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 if (kind == ENTRY_DELETE) {
 
-                    getLog().info("- File change detected ! " + filename);
+                    getLog().info("File change detected ! " + filename);
 
                     transpilatorThread.tick();
 
