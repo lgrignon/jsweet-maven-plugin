@@ -373,7 +373,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 if (isJavaFile(filename.toString())) {
 
-                    getLog().info("- Jsweet file change detected * " + filename);
+                    getLog().info("Jsweet file change detected * " + filename);
 
                     transpilatorThread.tick();
 
@@ -387,13 +387,13 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 if (isJavaFile(filename.toString())) {
 
-                    getLog().info("- Jsweet file change detected ! " + filename);
+                    getLog().info("Jsweet file change detected ! " + filename);
 
                     transpilatorThread.tick();
 
                 } else {
 
-                    getLog().info("- Jsweet new directory added");
+                    getLog().info("Jsweet new directory added");
 
                     return -1;
 
@@ -405,7 +405,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             if (kind == ENTRY_DELETE) {
 
-                getLog().info("- Jsweet file change detected ! " + filename);
+                getLog().info("Jsweet file change detected ! " + filename);
 
                 transpilatorThread.tick();
 
@@ -448,7 +448,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 if (isJavaFile(filename.toString())) {
 
-                    getLog().info("- Jetty file change detected * " + filename);
+                    getLog().info("Jetty file change detected * " + filename);
 
                     jettyThread.tick();
 
@@ -462,13 +462,13 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 if (isJavaFile(filename.toString())) {
 
-                    getLog().info("- Jetty file change detected ! " + filename);
+                    getLog().info("Jetty file change detected ! " + filename);
 
                     jettyThread.tick();
 
                 } else {
 
-                    getLog().info("- Jetty new directory added !");
+                    getLog().info("Jetty new directory added !");
 
                     return -1;
 
@@ -480,7 +480,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             if (kind == ENTRY_DELETE) {
 
-                getLog().info("- Jetty file change detected ! " + filename);
+                getLog().info("Jetty file change detected ! " + filename);
 
                 jettyThread.tick();
 
