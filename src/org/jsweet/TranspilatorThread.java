@@ -29,9 +29,9 @@ public class TranspilatorThread extends TickThread {
 
     }
 
-    public void onStart() {
+    public void onRun() {
 
-        getLog().info("- Transpilator process started ...");
+        getLog().info("- Transpiler thread started ...");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -47,8 +47,6 @@ public class TranspilatorThread extends TickThread {
     public void execute() {
 
         try {
-
-            getLog().info("- Transpiling ...");
 
             getMojo().transpile(project, transpiler);
 

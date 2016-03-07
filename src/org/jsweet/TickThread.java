@@ -14,10 +14,12 @@ public abstract class TickThread extends Thread {
     /* */
 
     private AbstractJSweetMojo mojo;
+
     private ReentrantLock lock = new ReentrantLock();
+
     private LinkedList<String> randomTriggers = new LinkedList<>();
 
-    /* */
+    private boolean isRunning;
 
     public TickThread(AbstractJSweetMojo mojo) {
 
@@ -43,9 +45,33 @@ public abstract class TickThread extends Thread {
 
     /* */
 
+    public boolean isRunning() {
+
+        try {
+
+            lock.lock();
+
+            return isRunning;
+
+        } finally {
+
+            lock.unlock();
+
+        }
+
+    }
+
+    /* */
+
     public void run() {
 
-        onStart();
+        onRun();
+
+        lock.lock();
+
+        isRunning = true;
+
+        lock.unlock();
 
         for (; ; ) {
 
@@ -80,7 +106,7 @@ public abstract class TickThread extends Thread {
 
     }
 
-    public abstract void onStart();
+    public abstract void onRun();
 
     /* */
 

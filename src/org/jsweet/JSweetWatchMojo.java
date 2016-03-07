@@ -7,7 +7,9 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.util.DirectoryScanner;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
@@ -29,11 +31,13 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
     private TranspilatorThread transpilatorThread;
 
+    private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
+
     public void execute() throws MojoFailureException, MojoExecutionException {
 
         MavenProject project = getMavenProject();
 
-        getLog().info("- Starting transpilator process  ... ");
+        getLog().info("- Starting transpiler thread  ... ");
 
         transpilatorThread = new TranspilatorThread(this, project);
 
@@ -41,92 +45,152 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
         transpilatorThread.start();
 
-        initialize(project);
+        while (!transpilatorThread.isRunning()) {
+
+            Thread.yield();
+
+        }
+
+        start(project);
 
     }
 
-    private void initialize(MavenProject project) {
+    private void start(MavenProject project) {
 
-		/* */
+        for (; ; ) {
 
-        @SuppressWarnings("unchecked")
-        List<String> sourcePaths = project.getCompileSourceRoots();
+            try {
 
-        try {
+                @SuppressWarnings("unchecked")
+                List<String> sourcePaths = project.getCompileSourceRoots();
 
-            for (; ; ) {
-
-				/* */
-
-                WatchService watchService = FileSystems.getDefault().newWatchService();
+                getLog().info("+ Updating watcher source paths");
 
                 List<Path> watchedPaths = new ArrayList<>();
 
-				/* */
+                int i = 0, j = 0, k = 0, l = 0;
 
-                getLog().info("+ Registering source path");
+                for (i = 0, j = sourcePaths.size(); i < j; i++) {
 
-                for (String sourceDirectory : sourcePaths) {
-                    Path path = Paths.get(sourceDirectory);
-                    watchedPaths.add(path);
-                    walkDirectoryTree(path, watchedPaths, watchService);
+                    String sourcePath = sourcePaths.get(i);
+
+                    getLog().info("     - Analysing " + sourcePath);
+
+                    DirectoryScanner dirScanner = new DirectoryScanner();
+
+                    dirScanner.setBasedir(new File(sourcePath));
+
+                    dirScanner.setIncludes(includes);
+
+                    dirScanner.setExcludes(excludes);
+
+                    dirScanner.scan();
+
+                    /*  */
+
+                    String[] includedDirectories = dirScanner.getIncludedDirectories();
+
+                    /*  */
+
+                    if (includedDirectories.length == 0) {
+
+                        getLog().info("     - No source includes found , using [" + sourcePath + "]");
+
+                        includedDirectories = new String[]{sourcePath};
+
+                    } else {
+
+                        getLog().info("     - " + includedDirectories.length + " directory found .");
+
+                        for (k = 0, l = includedDirectories.length; k < l; k++) {
+
+                            includedDirectories[k] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[k];
+
+                        }
+
+                    }
+
+                    /*  */
+
+                    for (k = 0, l = includedDirectories.length; k < l; k++) {
+
+                        Path path = Paths.get(includedDirectories[k]);
+
+                        watchedPaths.add(path);
+
+                    }
+
+                    /*  */
+
                 }
 
-                getLog().info("- Registering source path , DONE .");
+                /* */
 
-				/* */
+                getLog().info("     - Creating watcher");
 
-                getLog().info("");
+                WatchService watchService = FileSystems.getDefault().newWatchService();
 
-				/* */
+                /* */
 
-                getLog().info("- Listening for file change ... ");
+                for (i = 0, j = watchedPaths.size(); i < j; i++) {
 
-				/* */
+                    Path includedDirectory = watchedPaths.get(i);
+
+                    try {
+
+                        getLog().info("     - Registering [" + includedDirectory.toString() + "]");
+
+                        includedDirectory.register(
+
+                                watchService,
+
+                                new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
+
+                                sensitivity
+
+                        );
+
+                    } catch (IOException ioException) {
+
+                        getLog().info("    * Cannot register [" + includedDirectory.toString() + "]", ioException);
+
+                    }
+
+                }
+
+                /* */
+
+                watch(watchService);
+
+                /* */
 
                 try {
-                    watch(watchService);
-                } catch (Exception exception) {
-                    watchService.close();
+
+                    getLog().info("- Closing watcher");
+
+                    watchService.close(); // always close the watcher
+
+                } catch (IOException ioException) {
+
+                    getLog().info(ioException);
+
                 }
 
-				/* */
+            } catch (IOException ioException) {
 
-                Thread.yield();
-
-				/* */
+                getLog().info(ioException);
 
             }
 
-			/* */
-
-        } catch (IOException ioException) {
-
-            getLog().error(ioException);
-
         }
-    }
-
-	/* */
-
-    private void walkDirectoryTree(
-            Path startPath,
-            List<Path> watchedPaths,
-            WatchService watchService
-    )
-            throws IOException {
-
-        RegisteringFileVisitor visitor = new RegisteringFileVisitor(watchedPaths, watchService, this);
-
-        visitor.setSensitivity(SensitivityWatchEventModifier.HIGH);
-
-        Files.walkFileTree(startPath, visitor);
 
     }
 
-	/* */
+    /* */
 
-    private void watch(WatchService watchService) throws Exception {
+    private void watch(WatchService watchService) {
+
+        getLog().info("- Now waiting for file change");
 
         for (; ; ) {
 
@@ -136,7 +200,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 key = watchService.take();
 
-            } catch (InterruptedException x) {
+            } catch (InterruptedException i) {
 
                 return;
 
@@ -147,16 +211,55 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
                 WatchEvent.Kind<?> kind = event.kind();
 
                 if (kind == OVERFLOW) {
+
                     continue;
+
                 }
 
                 @SuppressWarnings("unchecked")
                 WatchEvent<Path> ev = (WatchEvent<Path>) event;
 
                 Path filename = ev.context();
-                if (kind == ENTRY_MODIFY || kind == ENTRY_CREATE || kind == ENTRY_DELETE) {
 
-                    getLog().info("* File change detected * " + filename);
+                /* */
+
+                if (kind == ENTRY_MODIFY) {
+
+                    if (isJavaFile(filename.toString())) {
+
+                        getLog().info("- File change detected * " + filename);
+
+                        transpilatorThread.tick();
+
+                    }
+
+                }
+
+                /* */
+
+                if (kind == ENTRY_CREATE) {
+
+                    if (isJavaFile(filename.toString())) {
+
+                        getLog().info("- File change detected ! " + filename);
+
+                        transpilatorThread.tick();
+
+                    } else {
+
+                        getLog().info("- New directory added");
+
+                        return;
+
+                    }
+
+                }
+
+                /* */
+
+                if (kind == ENTRY_DELETE) {
+
+                    getLog().info("- File change detected ! " + filename);
 
                     transpilatorThread.tick();
 
@@ -165,20 +268,23 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
             }
 
             boolean valid = key.reset();
+
             if (!valid) {
+
                 break;
+
             }
+
         }
 
-		/* */
-
-        try {
-            watchService.close();
-        } catch (IOException ioException) {
-            getLog().error(ioException);
-        }
-
-		/* */
     }
+
+    /* */
+
+    private boolean isJavaFile(String fileName) {
+
+        return fileName.endsWith(".java");
+    }
+
 
 }
