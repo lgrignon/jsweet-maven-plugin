@@ -38,7 +38,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         MavenProject project = getMavenProject();
 
-        getLog().info("- Starting transpiler thread  ... ");
+        getLog().info("Starting transpiler thread  ... ");
 
         transpilatorThread = new TranspilatorThread(this, project);
 
@@ -54,7 +54,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         /* */
 
-        getLog().info("- Starting jetty thread  ... ");
+        getLog().info("Starting jetty thread  ... ");
 
         jettyThread = new JettyThread(this, project);
 
@@ -144,7 +144,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
             @SuppressWarnings("unchecked")
             List<String> sourcePaths = project.getCompileSourceRoots();
 
-            getLog().info("+ Updating jsweet watcher source paths");
+            getLog().info("Updating jsweet watcher source paths");
 
             int i = 0, j = 0, k = 0, l = 0;
 
@@ -202,7 +202,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             }
 
-            getLog().info("     - Creating jsweet watcher");
+            /* */
 
             watchService = FileSystems.getDefault().newWatchService();
 
@@ -253,7 +253,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
             @SuppressWarnings("unchecked")
             List<String> sourcePaths = project.getCompileSourceRoots();
 
-            getLog().info("+ Updating jetty watcher source paths");
+            getLog().info("Updating jetty watcher source paths");
 
             List<Path> jettyWatchedPaths = new ArrayList<>();
 
@@ -300,7 +300,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             }
 
-            getLog().info("     - Creating jetty watcher");
+            /* */
 
             watchService = FileSystems.getDefault().newWatchService();
 
@@ -468,7 +468,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 } else {
 
-                    getLog().info("- Jetty new directory added");
+                    getLog().info("- Jetty new directory added !");
 
                     return -1;
 
