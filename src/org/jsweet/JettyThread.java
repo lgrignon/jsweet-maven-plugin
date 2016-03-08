@@ -6,6 +6,8 @@ import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.util.resource.URLResource;
 import org.eclipse.jetty.webapp.WebAppClassLoader;
 import org.eclipse.jetty.webapp.WebAppContext;
 
@@ -52,9 +54,19 @@ public class JettyThread extends TickThread {
     @Override
     public void onRun() {
 
+        /* */
+
         getLog().info("Jetty thread started ... ");
 
         server = new Server(8080);
+
+
+
+        /* */
+
+        ArrayList<URL> classLoaderUrls = new ArrayList<>();
+
+        /* */
 
         WebAppContext webAppContext = new WebAppContext();
 
@@ -62,13 +74,29 @@ public class JettyThread extends TickThread {
 
         /* */
 
+        WebAppClassLoader webAppClassLoader = null;
+
+        try {
+
+            webAppClassLoader = new WebAppClassLoader(webAppContext);
+
+        } catch (IOException ioException) {
+
+            getLog().error("When creating Web App classLoader ", ioException);
+
+            return;
+
+        }
+
+        /* */
+
         StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append(getMojo().getMavenProject().getBuild().getDirectory());
+        stringBuilder.append(getMojo().getMavenProject().getBasedir());
 
         stringBuilder.append("/");
 
-        stringBuilder.append(getMojo().getMavenProject().getBuild().getFinalName());
+        stringBuilder.append("src/main/webapp");
 
         /* */
 
@@ -80,19 +108,45 @@ public class JettyThread extends TickThread {
 
         /* */
 
-        ArrayList<URL> classLoaderUrls = new ArrayList<>();
+        stringBuilder.delete(0, stringBuilder.length());
+
+        stringBuilder.append("file://");
+
+        stringBuilder.append(getMojo().getMavenProject().getBuild().getDirectory());
+
+        stringBuilder.append("/");
+
+        stringBuilder.append("classes/");
+
+        /* */
+
+        try {
+
+            Resource classesResource = Resource.newResource(stringBuilder.toString());
+
+            webAppClassLoader.addClassPath(classesResource);
+
+        } catch (MalformedURLException malformedURLException) {
+
+            getLog().info(stringBuilder.toString(), malformedURLException);
+
+        } catch (IOException ioException) {
+
+            getLog().info(stringBuilder.toString(), ioException);
+
+        }
+
+        /* */
 
         List<Artifact> dependencies = getMojo().getMavenProject().getCompileArtifacts();
 
         /* */
 
-        for ( Artifact dependency : dependencies ) {
+        for (Artifact dependency : dependencies) {
 
             try {
 
                 StringBuilder urlBuilder = new StringBuilder();
-
-                urlBuilder.append("file://");
 
                 urlBuilder.append(getMojo().getMavenSession().getLocalRepository().getBasedir());
 
@@ -102,37 +156,25 @@ public class JettyThread extends TickThread {
 
                 getLog().info(urlBuilder.toString());
 
-                classLoaderUrls.add(Paths.get(urlBuilder.toString()).toUri().toURL());
+                Resource lib = Resource.newResource(urlBuilder.toString());
+
+                webAppClassLoader.addClassPath(lib);
 
             } catch (MalformedURLException malFormedURLException) {
 
                 getLog().info(malFormedURLException);
 
+            } catch (IOException ioException) {
+
+                getLog().info(ioException);
+
             }
 
         }
 
-        URLClassLoader urlClassLoader = new URLClassLoader(classLoaderUrls.toArray(new URL[classLoaderUrls.size()]),this.getContextClassLoader());
+        webAppContext.setClassLoader(webAppClassLoader);
 
-        WebAppClassLoader webAppClassLoader = null;
-
-
-        try {
-
-            webAppClassLoader = new WebAppClassLoader(
-                    urlClassLoader,
-                    webAppContext
-            );
-
-        } catch (IOException ioException) {
-
-            getLog().error("When creating Web App classLoader ", ioException);
-
-            return;
-
-        }
-
-         webAppContext.setClassLoader(webAppClassLoader);
+        /* */
 
         server.setHandler(webAppContext);
 
@@ -222,9 +264,9 @@ public class JettyThread extends TickThread {
                         element(name("outputDirectory"),
 
                                 getMojo().getMavenProject().getBuild().getDirectory()
-                                + "/"
-                                + getMojo().getMavenProject().getBuild().getFinalName()
-                                +"WEB-INF/classes"
+                                        + "/"
+                                        + getMojo().getMavenProject().getBuild().getFinalName()
+                                        + "WEB-INF/classes"
 
                         )
 
