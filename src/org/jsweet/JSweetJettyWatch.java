@@ -6,6 +6,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
 
@@ -18,11 +19,27 @@ import java.util.List;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-/**
- * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
+/*
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
-@Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST)
+/**
+ * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
+ *
+ *
+ */
+
+@Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST,requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     @Parameter(defaultValue = "HIGH", required = false, readonly = true)
@@ -40,7 +57,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         getLog().info("Starting transpiler thread  ... ");
 
-        transpilatorThread = new TranspilatorThread(this, project);
+        transpilatorThread = new TranspilatorThread(this);
 
         transpilatorThread.setTranspiler(createJSweetTranspiler(project));
 
@@ -56,7 +73,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         getLog().info("Starting jetty thread  ... ");
 
-        jettyThread = new JettyThread(this, project);
+        jettyThread = new JettyThread(this);
 
         jettyThread.start();
 

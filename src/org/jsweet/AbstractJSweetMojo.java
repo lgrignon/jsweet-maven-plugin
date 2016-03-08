@@ -24,8 +24,10 @@ import org.apache.maven.artifact.resolver.ArtifactResolutionException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.ResolutionNode;
+import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.AbstractMojo;
+import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -44,278 +46,293 @@ import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 public abstract class AbstractJSweetMojo extends AbstractMojo {
 
-	@Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
-	protected EcmaScriptComplianceLevel targetVersion;
+    @Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
+    protected EcmaScriptComplianceLevel targetVersion;
 
-	@Parameter(defaultValue = "none", required = false, readonly = true)
-	protected ModuleKind module;
+    @Parameter(defaultValue = "none", required = false, readonly = true)
+    protected ModuleKind module;
 
-	@Parameter(readonly = true)
-	protected String outDir;
+    @Parameter(readonly = true)
+    protected String outDir;
 
-	@Parameter(readonly = true)
-	protected String tsOut;
+    @Parameter(readonly = true)
+    protected String tsOut;
 
-	@Parameter(required = false, readonly = true)
-	protected boolean bundle;
+    @Parameter(required = false, readonly = true)
+    protected boolean bundle;
 
-	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean declaration;
+    @Parameter(defaultValue = "false", required = false, readonly = true)
+    protected boolean declaration;
 
-	@Parameter(readonly = true)
-	protected String dtsOut;
+    @Parameter(readonly = true)
+    protected String dtsOut;
 
-	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean sourceMap;
+    @Parameter(defaultValue = "false", required = false, readonly = true)
+    protected boolean sourceMap;
 
-	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean verbose;
+    @Parameter(defaultValue = "false", required = false, readonly = true)
+    protected boolean verbose;
 
-	@Parameter(required = false, readonly = true)
-	protected String bundlesDirectory;
+    @Parameter(required = false, readonly = true)
+    protected String bundlesDirectory;
 
-	@Parameter(required = false, readonly = true)
-	protected File candiesJsOut;
+    @Parameter(required = false, readonly = true)
+    protected File candiesJsOut;
 
-	@Parameter
-	protected String[] includes;
+    @Parameter
+    protected String[] includes;
 
-	@Parameter
-	protected String[] excludes;
+    @Parameter
+    protected String[] excludes;
 
-	@Parameter(defaultValue = "UTF-8", required = false)
-	protected String encoding;
+    @Parameter(defaultValue = "UTF-8", required = false)
+    protected String encoding;
 
-	@Parameter(defaultValue = "false", required = false)
-	protected boolean noRootDirectories;
+    @Parameter(defaultValue = "false", required = false)
+    protected boolean noRootDirectories;
 
-	@Parameter(defaultValue = "false", required = false)
-	protected boolean enableAssertions;
+    @Parameter(defaultValue = "false", required = false)
+    protected boolean enableAssertions;
 
-	@Parameter(defaultValue = "${java.home}")
-	protected File jdkHome;
+    @Parameter(defaultValue = "${java.home}")
+    protected File jdkHome;
 
-	@Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
-	protected ArtifactRepository localRepository;
+    @Parameter(defaultValue = "${localRepository}", required = true, readonly = true)
+    protected ArtifactRepository localRepository;
 
-	@Parameter(defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true)
-	protected List<ArtifactRepository> remoteRepositories;
+    @Parameter(defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true)
+    protected List<ArtifactRepository> remoteRepositories;
 
-	@Component
-	protected ArtifactFactory artifactFactory;
+    @Component
+    protected ArtifactFactory artifactFactory;
 
-	@Component
-	protected ArtifactResolver resolver;
+    @Component
+    protected ArtifactResolver resolver;
 
-	@Component
-	protected ArtifactMetadataSource metadataSource;
+    @Component
+    protected ArtifactMetadataSource metadataSource;
 
-	private void logInfo(String content) {
-		if (verbose) {
-			getLog().info(content);
-		}
-	}
+    @Parameter(defaultValue = "${project}", readonly = true)
+    private MavenProject mavenProject;
 
-	protected SourceFile[] collectSourceFiles(MavenProject project) {
+    @Parameter(defaultValue = "${session}", readonly = true)
+    private MavenSession mavenSession;
 
-		@SuppressWarnings("unchecked")
-		List<String> sourcePaths = project.getCompileSourceRoots();
+    @Component
+    private BuildPluginManager pluginManager;
 
-		logInfo("source includes: " + ArrayUtils.toString(includes));
-		logInfo("source excludes: " + ArrayUtils.toString(excludes));
+    private void logInfo(String content) {
+        if (verbose) {
+            getLog().info(content);
+        }
+    }
 
-		logInfo("sources paths: " + sourcePaths);
+    protected SourceFile[] collectSourceFiles(MavenProject project) {
 
-		List<SourceFile> sources = new LinkedList<>();
-		for (String sourcePath : sourcePaths) {
-			DirectoryScanner dirScanner = new DirectoryScanner();
-			dirScanner.setBasedir(new File(sourcePath));
-			dirScanner.setIncludes(includes);
-			dirScanner.setExcludes(excludes);
-			dirScanner.scan();
+        @SuppressWarnings("unchecked")
+        List<String> sourcePaths = project.getCompileSourceRoots();
 
-			for (String includedPath : dirScanner.getIncludedFiles()) {
-				if (includedPath.endsWith(".java")) {
-					sources.add(new SourceFile(new File(sourcePath, includedPath)));
-				}
-			}
-		}
+        logInfo("source includes: " + ArrayUtils.toString(includes));
+        logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
-		logInfo("sourceFiles=" + sources);
+        logInfo("sources paths: " + sourcePaths);
 
-		return sources.toArray(new SourceFile[0]);
-	}
+        List<SourceFile> sources = new LinkedList<>();
+        for (String sourcePath : sourcePaths) {
+            DirectoryScanner dirScanner = new DirectoryScanner();
+            dirScanner.setBasedir(new File(sourcePath));
+            dirScanner.setIncludes(includes);
+            dirScanner.setExcludes(excludes);
+            dirScanner.scan();
 
-	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
+            for (String includedPath : dirScanner.getIncludedFiles()) {
+                if (includedPath.endsWith(".java")) {
+                    sources.add(new SourceFile(new File(sourcePath, includedPath)));
+                }
+            }
+        }
 
-		try {
+        logInfo("sourceFiles=" + sources);
 
-			List<File> dependenciesFiles = getCandiesJars(project);
+        return sources.toArray(new SourceFile[0]);
+    }
 
-			String classPath = dependenciesFiles.stream() //
-					.map(f -> f.getAbsolutePath()) //
-					.collect(joining(System.getProperty("path.separator")));
+    protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
-			logInfo("classpath from maven: " + classPath);
+        try {
 
-			File tsOutputDir = getTsOutDir();
+            List<File> dependenciesFiles = getCandiesJars(project);
 
-			File jsOutDir = getJsOutDir();
+            String classPath = dependenciesFiles.stream() //
+                    .map(f -> f.getAbsolutePath()) //
+                    .collect(joining(System.getProperty("path.separator")));
 
-			File declarationOutDir = getDeclarationsOutDir();
+            logInfo("classpath from maven: " + classPath);
 
-			logInfo("jsOut: " + jsOutDir);
-			logInfo("bundle: " + bundle);
-			if (bundlesDirectory != null) {
-				logInfo("bundlesDirectory: " + bundlesDirectory);
-			}
-			logInfo("tsOut: " + tsOutputDir);
-			logInfo("declarations: " + declaration);
-			logInfo("declarationOutDir: " + declarationOutDir);
-			logInfo("candiesJsOutDir: " + candiesJsOut);
-			logInfo("ecmaTargetVersion: " + targetVersion);
-			logInfo("moduleKind: " + module);
-			logInfo("sourceMap: " + sourceMap);
-			logInfo("verbose: " + verbose);
-			logInfo("jdkHome: " + jdkHome);
+            File tsOutputDir = getTsOutDir();
 
-			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
+            File jsOutDir = getJsOutDir();
 
-			if (verbose) {
-				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
-			}
+            File declarationOutDir = getDeclarationsOutDir();
 
-			JSweetTranspiler transpiler = new JSweetTranspiler(getTranspilerWorkingDirectory(project), tsOutputDir,
-					jsOutDir, candiesJsOut, classPath);
-			transpiler.setTscWatchMode(false);
-			transpiler.setEcmaTargetVersion(targetVersion);
-			transpiler.setModuleKind(module);
-			transpiler.setBundle(bundle);
-			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
-			transpiler.setPreserveSourceLineNumbers(sourceMap);
-			transpiler.setEncoding(encoding);
-			transpiler.setNoRootDirectories(noRootDirectories);
-			transpiler.setIgnoreAssertions(!enableAssertions);
-			transpiler.setGenerateDeclarations(declaration);
-			transpiler.setDeclarationsOutputDir(declarationOutDir);
+            logInfo("jsOut: " + jsOutDir);
+            logInfo("bundle: " + bundle);
+            if (bundlesDirectory != null) {
+                logInfo("bundlesDirectory: " + bundlesDirectory);
+            }
+            logInfo("tsOut: " + tsOutputDir);
+            logInfo("declarations: " + declaration);
+            logInfo("declarationOutDir: " + declarationOutDir);
+            logInfo("candiesJsOutDir: " + candiesJsOut);
+            logInfo("ecmaTargetVersion: " + targetVersion);
+            logInfo("moduleKind: " + module);
+            logInfo("sourceMap: " + sourceMap);
+            logInfo("verbose: " + verbose);
+            logInfo("jdkHome: " + jdkHome);
 
-			return transpiler;
+            JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
-		} catch (Exception e) {
-			getLog().error("failed to create transpiler", e);
-			throw new MojoExecutionException("failed to create transpiler", e);
-		}
-	}
+            if (verbose) {
+                LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
+            }
 
-	protected File getDeclarationsOutDir() throws IOException {
-		File declarationOutDir = null;
-		if (isNotBlank(this.dtsOut)) {
-			declarationOutDir = new File(this.dtsOut).getCanonicalFile();
-		}
-		return declarationOutDir;
-	}
+            JSweetTranspiler transpiler = new JSweetTranspiler(getTranspilerWorkingDirectory(project), tsOutputDir,
+                    jsOutDir, candiesJsOut, classPath);
+            transpiler.setTscWatchMode(false);
+            transpiler.setEcmaTargetVersion(targetVersion);
+            transpiler.setModuleKind(module);
+            transpiler.setBundle(bundle);
+            transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
+            transpiler.setPreserveSourceLineNumbers(sourceMap);
+            transpiler.setEncoding(encoding);
+            transpiler.setNoRootDirectories(noRootDirectories);
+            transpiler.setIgnoreAssertions(!enableAssertions);
+            transpiler.setGenerateDeclarations(declaration);
+            transpiler.setDeclarationsOutputDir(declarationOutDir);
 
-	protected File getJsOutDir() throws IOException {
-		File jsOutDir = null;
-		String jsOutputDirPath = "target/js";
-		if (isNotBlank(this.outDir)) {
-			jsOutputDirPath = new File(this.outDir).getCanonicalPath();
-		}
-		jsOutDir = new File(jsOutputDirPath);
-		return jsOutDir;
-	}
+            return transpiler;
 
-	protected File getTsOutDir() throws IOException {
-		String tsOutputDirPath = "target/ts";
-		if (isNotBlank(this.tsOut)) {
-			tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
-		}
-		File tsOutputDir = new File(tsOutputDirPath);
-		return tsOutputDir;
-	}
+        } catch (Exception e) {
+            getLog().error("failed to create transpiler", e);
+            throw new MojoExecutionException("failed to create transpiler", e);
+        }
+    }
 
-	protected List<File> getCandiesJars(MavenProject project)
-			throws ArtifactResolutionException, ArtifactNotFoundException {
+    protected File getDeclarationsOutDir() throws IOException {
+        File declarationOutDir = null;
+        if (isNotBlank(this.dtsOut)) {
+            declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+        }
+        return declarationOutDir;
+    }
 
-		@SuppressWarnings("unchecked")
-		List<Dependency> dependencies = project.getDependencies();
-		logInfo("dependencies=" + dependencies);
+    protected File getJsOutDir() throws IOException {
+        File jsOutDir = null;
+        String jsOutputDirPath = "target/js";
+        if (isNotBlank(this.outDir)) {
+            jsOutputDirPath = new File(this.outDir).getCanonicalPath();
+        }
+        jsOutDir = new File(jsOutputDirPath);
+        return jsOutDir;
+    }
 
-		// add artifacts of declared dependencies
-		List<Artifact> directDependencies = new LinkedList<>();
-		for (Dependency dependency : dependencies) {
-			Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
-					dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
+    protected File getTsOutDir() throws IOException {
+        String tsOutputDirPath = "target/ts";
+        if (isNotBlank(this.tsOut)) {
+            tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
+        }
+        File tsOutputDir = new File(tsOutputDirPath);
+        return tsOutputDir;
+    }
 
-			logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
+    protected List<File> getCandiesJars(MavenProject project)
+            throws ArtifactResolutionException, ArtifactNotFoundException {
 
-			directDependencies.add(mavenArtifact);
-		}
+        @SuppressWarnings("unchecked")
+        List<Dependency> dependencies = project.getDependencies();
+        logInfo("dependencies=" + dependencies);
 
-		// lookup for transitive dependencies
-		ArtifactResolutionResult dependenciesResolutionResult = resolver.resolveTransitively( //
-				new HashSet<>(directDependencies), //
-				project.getArtifact(), //
-				remoteRepositories, //
-				localRepository, //
-				metadataSource);
+        // add artifacts of declared dependencies
+        List<Artifact> directDependencies = new LinkedList<>();
+        for (Dependency dependency : dependencies) {
+            Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
+                    dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-		@SuppressWarnings("unchecked")
-		Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
-		logInfo("all candies artifacts: " + allDependenciesArtifacts);
+            logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
 
-		// add dependencies files
-		List<File> dependenciesFiles = new LinkedList<>();
-		for (ResolutionNode depResult : allDependenciesArtifacts) {
-			dependenciesFiles.add(depResult.getArtifact().getFile());
-		}
+            directDependencies.add(mavenArtifact);
+        }
 
-		logInfo("candies jars: " + dependenciesFiles);
+        // lookup for transitive dependencies
+        ArtifactResolutionResult dependenciesResolutionResult = resolver.resolveTransitively( //
+                new HashSet<>(directDependencies), //
+                project.getArtifact(), //
+                remoteRepositories, //
+                localRepository, //
+                metadataSource);
 
-		return dependenciesFiles;
-	}
+        @SuppressWarnings("unchecked")
+        Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
+        logInfo("all candies artifacts: " + allDependenciesArtifacts);
 
-	protected MavenProject getMavenProject() {
-		Map<?, ?> ctx = getPluginContext();
-		MavenProject project = (MavenProject) ctx.get("project");
-		return project;
-	}
+        // add dependencies files
+        List<File> dependenciesFiles = new LinkedList<>();
+        for (ResolutionNode depResult : allDependenciesArtifacts) {
+            dependenciesFiles.add(depResult.getArtifact().getFile());
+        }
 
-	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
-		try {
-			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
-					new ConsoleTranspilationHandler());
-			try {
-	
-	
-				SourceFile[] sources = collectSourceFiles(project);
-	
-				transpiler.transpile(transpilationHandler, sources);
-	
-			} catch (NoClassDefFoundError error) {
-				transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
-						JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
-			}
-	
-			int errorCount = transpilationHandler.getErrorCount();
-	
-			if (errorCount > 0) {
-				throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
-						+ transpilationHandler.getWarningCount() + " warning(s)");
-			} else {
-	
-				if (transpilationHandler.getWarningCount() > 0) {
-					getLog().info(
-							"transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
-				} else {
-					getLog().info("transpilation successfully completed with no errors and no warnings");
-				}
-	
-			}
-	
-		} catch (Exception e) {
-			getLog().error("transpilation failed", e);
-			throw new MojoExecutionException("transpilation failed", e);
-		}
-	}
+        logInfo("candies jars: " + dependenciesFiles);
+
+        return dependenciesFiles;
+    }
+
+    protected MavenProject getMavenProject() {
+        return mavenProject;
+    }
+
+    protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
+        try {
+            ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
+                    new ConsoleTranspilationHandler());
+            try {
+
+
+                SourceFile[] sources = collectSourceFiles(project);
+
+                transpiler.transpile(transpilationHandler, sources);
+
+            } catch (NoClassDefFoundError error) {
+                transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
+                        JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
+            }
+
+            int errorCount = transpilationHandler.getErrorCount();
+
+            if (errorCount > 0) {
+                throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
+                        + transpilationHandler.getWarningCount() + " warning(s)");
+            } else {
+
+                if (transpilationHandler.getWarningCount() > 0) {
+                    getLog().info(
+                            "transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
+                } else {
+                    getLog().info("transpilation successfully completed with no errors and no warnings");
+                }
+
+            }
+
+        } catch (Exception e) {
+            getLog().error("transpilation failed", e);
+            throw new MojoExecutionException("transpilation failed", e);
+        }
+    }
+
+    public BuildPluginManager getPluginManager() {
+        return pluginManager;
+    }
+
+    public MavenSession getMavenSession() {
+        return mavenSession;
+    }
 }

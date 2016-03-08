@@ -39,7 +39,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
         getLog().info("- Starting transpiler thread  ... ");
 
-        transpilatorThread = new TranspilatorThread(this, project);
+        transpilatorThread = new TranspilatorThread(this);
 
         transpilatorThread.setTranspiler(createJSweetTranspiler(project));
 
