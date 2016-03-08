@@ -55,6 +55,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter(readonly = false)
     protected String outDir;
 
+    @Parameter(readonly = false)
+    protected String relativeOutDir;
+
     @Parameter(readonly = true)
     protected String tsOut;
 
@@ -338,5 +341,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
     public MavenSession getMavenSession() {
         return mavenSession;
+    }
+
+    public String getOutDir() {
+        return outDir;
+    }
+
+    public String getRelativeOutDir() {
+        return relativeOutDir;
     }
 }
