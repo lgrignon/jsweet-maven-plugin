@@ -52,7 +52,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter(defaultValue = "none", required = false, readonly = true)
     protected ModuleKind module;
 
-    @Parameter(readonly = true)
+    @Parameter(readonly = false)
     protected String outDir;
 
     @Parameter(readonly = true)
@@ -125,6 +125,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         if (verbose) {
             getLog().info(content);
         }
+    }
+
+    public void setOutDir(String outDir) {
+        this.outDir = outDir;
     }
 
     protected SourceFile[] collectSourceFiles(MavenProject project) {
