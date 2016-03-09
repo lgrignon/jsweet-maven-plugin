@@ -35,7 +35,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
     public void execute() throws MojoFailureException, MojoExecutionException {
 
-        setOutDir(getOutDir()+"/" + getRelativeOutDir());
+        setOutDir(getOutDir() + "/" + getRelativeOutDir());
 
         MavenProject project = getMavenProject();
 
@@ -70,11 +70,11 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 List<Path> watchedPaths = new ArrayList<>();
 
-                int i = 0, j = 0, k = 0, l = 0;
+                int k = 0, l = 0;
 
-                for (i = 0, j = sourcePaths.size(); i < j; i++) {
+                for (String sourcePath : sourcePaths) {
 
-                    String sourcePath = sourcePaths.get(i);
+                    /*  */
 
                     getLog().info("     - Analysing " + sourcePath);
 
@@ -132,9 +132,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 /* */
 
-                for (i = 0, j = watchedPaths.size(); i < j; i++) {
-
-                    Path includedDirectory = watchedPaths.get(i);
+                for (Path includedDirectory :  watchedPaths ) {
 
                     try {
 
@@ -168,7 +166,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     getLog().info("- Closing watcher");
 
-                    watchService.close(); // always close the watcher
+                    watchService.close();
 
                 } catch (IOException ioException) {
 

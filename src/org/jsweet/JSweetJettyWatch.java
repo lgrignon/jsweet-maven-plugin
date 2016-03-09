@@ -54,9 +54,13 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     public void execute() throws MojoFailureException, MojoExecutionException {
 
+        System.setProperty("org.eclipse.jetty.io.LEVEL","ALL");
+
         MavenProject project = getMavenProject();
 
-        setOutDir(project.getBasedir()+ "/src/main/webapp/" + getRelativeOutDir());
+        System.setErr(new PrintStream(new JSweetLogStream(getLog())));
+
+        setOutDir(project.getBasedir() + "/src/main/webapp/" + getRelativeOutDir());
 
         getLog().info("Starting transpiler thread  ... ");
 
