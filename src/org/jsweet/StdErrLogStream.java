@@ -9,13 +9,16 @@ import java.io.PrintStream;
 import java.util.Arrays;
 
 /**
- * @
+ *
+ * @EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
+ *
  */
-public class JSweetLogStream extends ByteArrayOutputStream {
+
+public class StdErrLogStream extends ByteArrayOutputStream {
 
     private Log log;
 
-    public JSweetLogStream(Log log) {
+    public StdErrLogStream(Log log) {
 
         this.log = log;
 

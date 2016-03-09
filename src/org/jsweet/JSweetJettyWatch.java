@@ -58,7 +58,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         MavenProject project = getMavenProject();
 
-        System.setErr(new PrintStream(new JSweetLogStream(getLog())));
+        System.setErr(new PrintStream(new StdErrLogStream(getLog())));
 
         setOutDir(project.getBasedir() + "/src/main/webapp/" + getRelativeOutDir());
 
