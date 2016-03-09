@@ -61,12 +61,6 @@ public class JettyThread extends TickThread {
 
         server = new Server(8080);
 
-
-
-        /* */
-
-        ArrayList<URL> classLoaderUrls = new ArrayList<>();
-
         /* */
 
         WebAppContext webAppContext = new WebAppContext();
@@ -143,11 +137,11 @@ public class JettyThread extends TickThread {
 
         /* */
 
+        StringBuilder urlBuilder = new StringBuilder();
+
         for (Artifact dependency : dependencies) {
 
             try {
-
-                StringBuilder urlBuilder = new StringBuilder();
 
                 urlBuilder.append(getMojo().getMavenSession().getLocalRepository().getBasedir());
 
@@ -161,13 +155,15 @@ public class JettyThread extends TickThread {
 
                 webAppClassLoader.addClassPath(lib);
 
+                urlBuilder.delete(0,urlBuilder.length());
+
             } catch (MalformedURLException malFormedURLException) {
 
                 getLog().info(malFormedURLException);
 
             } catch (IOException ioException) {
 
-                getLog().info(ioException);
+                getLog().info(urlBuilder.toString(),ioException);
 
             }
 
@@ -267,7 +263,7 @@ public class JettyThread extends TickThread {
                                 getMojo().getMavenProject().getBuild().getDirectory()
                                         + "/"
                                         + getMojo().getMavenProject().getBuild().getFinalName()
-                                        + "WEB-INF/classes"
+                                        + "/WEB-INF/classes"
 
                         )
 

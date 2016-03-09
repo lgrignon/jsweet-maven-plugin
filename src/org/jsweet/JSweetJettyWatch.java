@@ -12,6 +12,7 @@ import org.codehaus.plexus.util.DirectoryScanner;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -54,6 +55,8 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
     public void execute() throws MojoFailureException, MojoExecutionException {
 
         MavenProject project = getMavenProject();
+
+        setOutDir(project.getBasedir()+"/src/main/wepapp/" + getRelativeOutDir());
 
         getLog().info("Starting transpiler thread  ... ");
 
@@ -282,7 +285,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 Path path = Paths.get(sourcePath);
 
-                WatcherFileVisitor fileVisitor = new WatcherFileVisitor();
+                FileVisitor fileVisitor = new FileVisitor();
 
                 Files.walkFileTree(path, fileVisitor);
 

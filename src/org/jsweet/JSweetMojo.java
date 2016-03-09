@@ -30,14 +30,16 @@ import org.jsweet.transpiler.JSweetTranspiler;
 @Mojo(name = "jsweet", defaultPhase = LifecyclePhase.GENERATE_SOURCES)
 public class JSweetMojo extends AbstractJSweetMojo {
 
-	public void execute() throws MojoFailureException, MojoExecutionException {
-		getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
-				+ JSweetConfig.getBuildDate() + ")");
+    public void execute() throws MojoFailureException, MojoExecutionException {
+        getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
+                + JSweetConfig.getBuildDate() + ")");
 
-		MavenProject project = getMavenProject();
+        setOutDir(getOutDir() + "/" + getRelativeOutDir());
 
-		JSweetTranspiler transpiler = createJSweetTranspiler(project);
+        MavenProject project = getMavenProject();
 
-		transpile(project, transpiler);
-	}
+        JSweetTranspiler transpiler = createJSweetTranspiler(project);
+
+        transpile(project, transpiler);
+    }
 }

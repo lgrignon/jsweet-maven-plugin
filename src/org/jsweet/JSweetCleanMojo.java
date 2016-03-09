@@ -35,7 +35,11 @@ import org.apache.maven.project.MavenProject;
 public class JSweetCleanMojo extends AbstractJSweetMojo {
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
+
 		getLog().info("cleaning jsweet working directory");
+
+		setOutDir(getOutDir()+"/" + getRelativeOutDir());
+
 		try {
 			MavenProject project = getMavenProject();
 

@@ -350,4 +350,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     public String getRelativeOutDir() {
         return relativeOutDir;
     }
+
+
 }
