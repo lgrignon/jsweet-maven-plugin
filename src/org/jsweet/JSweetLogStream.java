@@ -24,7 +24,7 @@ public class JSweetLogStream extends ByteArrayOutputStream {
     @Override
     public void flush() throws IOException {
 
-        int s = 0, e = 0;
+        int s = 0;
 
         byte[] byteArray = toByteArray();
 
