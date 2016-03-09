@@ -56,9 +56,11 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         MavenProject project = getMavenProject();
 
-        setOutDir(project.getBasedir()+"/src/main/wepapp/" + getRelativeOutDir());
+        setOutDir(project.getBasedir()+ "/src/main/webapp/" + getRelativeOutDir());
 
         getLog().info("Starting transpiler thread  ... ");
+
+        getLog().info("Transpilator output directory " + getOutDir());
 
         transpilatorThread = new TranspilatorThread(this);
 
