@@ -31,7 +31,6 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
     private TranspilatorThread transpilatorThread;
 
-
     private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
 
     public void execute() throws MojoFailureException, MojoExecutionException {

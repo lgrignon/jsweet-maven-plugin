@@ -35,8 +35,8 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 
 /**
- * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  *
+ *  @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  *
  */
 
