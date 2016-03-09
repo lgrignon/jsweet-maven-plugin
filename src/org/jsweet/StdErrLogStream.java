@@ -18,7 +18,7 @@ public class StdErrLogStream extends ByteArrayOutputStream {
 
     private Log log;
 
-    public StdErrLogStream(Log log) {
+    public StdErrLogStream( Log log ) {
 
         this.log = log;
 
