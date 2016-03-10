@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
@@ -88,6 +87,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter
     protected String[] excludes;
 
+    @Parameter
+    protected String[] sharedIncludes;
+
     @Parameter(defaultValue = "UTF-8", required = false)
     protected String encoding;
 
@@ -139,7 +141,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         List<String> sourcePaths = project.getCompileSourceRoots();
 
-        logInfo("source includes: " + ArrayUtils.toString(includes));
+        logInfo("source includes: " + ArrayUtils.toString(ArrayUtils.addAll(includes,sharedIncludes)));
         logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
         logInfo("sources paths: " + sourcePaths);
@@ -148,7 +150,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         for (String sourcePath : sourcePaths) {
             DirectoryScanner dirScanner = new DirectoryScanner();
             dirScanner.setBasedir(new File(sourcePath));
-            dirScanner.setIncludes(includes);
+            dirScanner.setIncludes(ArrayUtils.addAll(includes,sharedIncludes));
             dirScanner.setExcludes(excludes);
             dirScanner.scan();
 
@@ -351,5 +353,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         return relativeOutDir;
     }
 
-
+    public String[] getSharedIncludes() {
+        return sharedIncludes;
+    }
 }

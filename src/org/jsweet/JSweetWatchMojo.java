@@ -1,6 +1,7 @@
 package org.jsweet;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -82,7 +83,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     dirScanner.setBasedir(new File(sourcePath));
 
-                    dirScanner.setIncludes(includes);
+                    dirScanner.setIncludes(ArrayUtils.addAll(includes,sharedIncludes));
 
                     dirScanner.setExcludes(excludes);
 

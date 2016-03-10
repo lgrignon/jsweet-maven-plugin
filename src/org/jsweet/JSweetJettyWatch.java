@@ -1,6 +1,7 @@
 package org.jsweet;
 
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -35,12 +35,10 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 
 /**
- *
- *  @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
- *
+ * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  */
 
-@Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST,requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     @Parameter(defaultValue = "HIGH", required = false, readonly = true)
@@ -54,7 +52,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     public void execute() throws MojoFailureException, MojoExecutionException {
 
-        System.setProperty("org.eclipse.jetty.io.LEVEL","ALL");
+        System.setProperty("org.eclipse.jetty.io.LEVEL", "ALL");
 
         MavenProject project = getMavenProject();
 
@@ -94,11 +92,9 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         /* */
 
-        ArrayList<Path> jsweetPaths = new ArrayList<>();
+        WatchService jsweetWatcher = createJSweetWatcher(project);
 
-        WatchService jsweetWatcher = createJSweetWatcher(jsweetPaths, project);
-
-        WatchService jettyWatcher = createJettyWatcher(jsweetPaths, project);
+        WatchService jettyWatcher = createJettyWatcher(project);
 
         /* */
 
@@ -114,7 +110,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                     jettyWatcher.close();
 
-                    jettyWatcher = createJettyWatcher(jsweetPaths, project);
+                    jettyWatcher = createJettyWatcher(project);
 
                 } catch (IOException ioException) {
 
@@ -138,9 +134,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                     jsweetWatcher.close();
 
-                    jsweetPaths.clear();
-
-                    jsweetWatcher = createJSweetWatcher(jsweetPaths, project);
+                    jsweetWatcher = createJSweetWatcher(project);
 
                 } catch (IOException ioException) {
 
@@ -161,16 +155,18 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     }
 
-    private WatchService createJSweetWatcher(ArrayList<Path> jsweetWatchedPaths, MavenProject project) {
+    private WatchService createJSweetWatcher(MavenProject project) {
 
         WatchService watchService = null;
+
+        ArrayList<Path> jsweetWatchedPaths = new ArrayList<>();
 
         try {
 
             @SuppressWarnings("unchecked")
             List<String> sourcePaths = project.getCompileSourceRoots();
 
-            getLog().info("Updating jsweet watcher source paths");
+            getLog().info("Updating jsweet source paths");
 
             int i = 0, j = 0, k = 0, l = 0;
 
@@ -184,7 +180,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 dirScanner.setBasedir(new File(sourcePath));
 
-                dirScanner.setIncludes(includes);
+                dirScanner.setIncludes(ArrayUtils.addAll(includes, sharedIncludes));
 
                 dirScanner.setExcludes(excludes);
 
@@ -270,57 +266,72 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     }
 
-    private WatchService createJettyWatcher(ArrayList<Path> jsweetWatcherPath, MavenProject project) {
+    private WatchService createJettyWatcher(MavenProject project) {
 
         WatchService watchService = null;
+
+        ArrayList<Path> jettyWatchedPath = new ArrayList<>();
 
         try {
 
             @SuppressWarnings("unchecked")
             List<String> sourcePaths = project.getCompileSourceRoots();
 
-            getLog().info("Updating jetty watcher source paths");
+            getLog().info("Updating server source paths");
 
-            List<Path> jettyWatchedPaths = new ArrayList<>();
+            int i = 0, j = 0, k = 0, l = 0;
 
-            int i = 0, j = 0, k = 0, l = 0, m = 0, n = 0;
+            for (i = 0, j = sourcePaths.size(); i < j; i++) {
 
-            for (String sourcePath : sourcePaths) {
+                String sourcePath = sourcePaths.get(i);
 
                 getLog().info("     - Analysing " + sourcePath);
 
-                Path path = Paths.get(sourcePath);
+                DirectoryScanner dirScanner = new DirectoryScanner();
 
-                FileVisitor fileVisitor = new FileVisitor();
+                dirScanner.setBasedir(new File(sourcePath));
 
-                Files.walkFileTree(path, fileVisitor);
+                dirScanner.setIncludes(ArrayUtils.addAll(excludes, sharedIncludes));
 
-                jettyWatchedPaths.addAll(fileVisitor.getDirectories());
+                dirScanner.setExcludes(includes);
 
-                /* Excludes don't seem to work well (i'm certainly missing something ... ) */
-                /* So i use the first path list generated for jsweet to filter the jetty one */
+                dirScanner.scan();
 
-                for (k = 0, j = jsweetWatcherPath.size(); k < j; k++) {
+                /*  */
 
-                    Path jsweetPath = jsweetWatcherPath.get(k);
+                String[] includedDirectories = dirScanner.getIncludedDirectories();
 
-                    Iterator<Path> jettyPathIterator = jettyWatchedPaths.iterator();
+                /*  */
 
-                    while (jettyPathIterator.hasNext()) {
+                if (includedDirectories.length == 0) {
 
-                        Path jettyPath = jettyPathIterator.next();
+                    getLog().info("     - No source includes found , using [" + sourcePath + "]");
 
-                        if (jettyPath.toString().trim().equals(jsweetPath.toString().trim())) {
+                    includedDirectories = new String[]{sourcePath};
 
-                            jettyPathIterator.remove(); // remove duplicated path
+                } else {
 
-                        }
+                    getLog().info("     - " + includedDirectories.length + " directory found .");
+
+                    for (k = 0, l = includedDirectories.length; k < l; k++) {
+
+                        includedDirectories[k] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[k];
 
                     }
 
                 }
 
-                // if there no path stop here !
+                /*  */
+
+                for (k = 0, l = includedDirectories.length; k < l; k++) {
+
+                    Path path = Paths.get(includedDirectories[k]);
+
+                    jettyWatchedPath.add(path);
+
+                }
+
+                /*  */
 
             }
 
@@ -330,9 +341,9 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             /* */
 
-            for (i = 0, j = jettyWatchedPaths.size(); i < j; i++) {
+            for (i = 0, j = jettyWatchedPath.size(); i < j; i++) {
 
-                Path includedDirectory = jettyWatchedPaths.get(i);
+                Path includedDirectory = jettyWatchedPath.get(i);
 
                 try {
 
