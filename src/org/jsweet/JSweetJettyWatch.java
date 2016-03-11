@@ -159,7 +159,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         WatchService watchService = null;
 
-        ArrayList<Path> jsweetWatchedPaths = new ArrayList<>();
+        ArrayList<Path> paths = new ArrayList<>();
 
         try {
 
@@ -168,11 +168,9 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             getLog().info("Updating jsweet source paths");
 
-            int i = 0, j = 0, k = 0, l = 0;
+            int k = 0, l = 0;
 
-            for (i = 0, j = sourcePaths.size(); i < j; i++) {
-
-                String sourcePath = sourcePaths.get(i);
+            for ( String sourcePath : sourcePaths) {
 
                 getLog().info("     - Analysing " + sourcePath);
 
@@ -216,7 +214,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                     Path path = Paths.get(includedDirectories[k]);
 
-                    jsweetWatchedPaths.add(path);
+                    paths.add(path);
 
                 }
 
@@ -230,15 +228,13 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             /* */
 
-            for (i = 0, j = jsweetWatchedPaths.size(); i < j; i++) {
-
-                Path includedDirectory = jsweetWatchedPaths.get(i);
+            for (Path includedPath : paths) {
 
                 try {
 
-                    getLog().info("     - Registering [" + includedDirectory.toString() + "]");
+                    getLog().info("     - Registering [" + includedPath.toString() + "]");
 
-                    includedDirectory.register(
+                    includedPath.register(
 
                             watchService,
 
@@ -250,7 +246,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 } catch (IOException ioException) {
 
-                    getLog().info("    * Cannot register [" + includedDirectory.toString() + "]", ioException);
+                    getLog().info("    * Cannot register [" + includedPath.toString() + "]", ioException);
 
                 }
 
@@ -279,11 +275,9 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             getLog().info("Updating server source paths");
 
-            int i = 0, j = 0, k = 0, l = 0;
+            int k = 0, l = 0;
 
-            for (i = 0, j = sourcePaths.size(); i < j; i++) {
-
-                String sourcePath = sourcePaths.get(i);
+            for (String sourcePath : sourcePaths) {
 
                 getLog().info("     - Analysing " + sourcePath);
 
@@ -341,15 +335,13 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
             /* */
 
-            for (i = 0, j = jettyWatchedPath.size(); i < j; i++) {
-
-                Path includedDirectory = jettyWatchedPath.get(i);
+            for (Path path : jettyWatchedPath ) {
 
                 try {
 
-                    getLog().info("     - Registering [" + includedDirectory.toString() + "]");
+                    getLog().info("     - Registering [" + path.toString() + "]");
 
-                    includedDirectory.register(
+                    path.register(
 
                             watchService,
 
@@ -361,7 +353,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
                 } catch (IOException ioException) {
 
-                    getLog().info("    * Cannot register [" + includedDirectory.toString() + "]", ioException);
+                    getLog().info("    * Cannot register [" + path.toString() + "]", ioException);
 
                 }
 
@@ -379,15 +371,15 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     /* */
 
-    private int jsweetWatch(WatchService jsweetWatcher) {
+    private int jsweetWatch(WatchService watchService) {
 
-        WatchKey jsweetKey;
+        WatchKey key;
 
-        jsweetKey = jsweetWatcher.poll();
+        key = watchService.poll();
 
-        if (jsweetKey == null) return 0;
+        if (key == null) return 0;
 
-        for (WatchEvent<?> event : jsweetKey.pollEvents()) {
+        for (WatchEvent<?> event : key.pollEvents()) {
 
             WatchEvent.Kind<?> kind = event.kind();
 
@@ -448,7 +440,7 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
         }
 
-        jsweetKey.reset();
+        key.reset();
 
         return 0;
 

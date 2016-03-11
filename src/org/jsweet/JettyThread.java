@@ -149,7 +149,7 @@ public class JettyThread extends TickThread {
 
                 urlBuilder.append(getMojo().getMavenSession().getLocalRepository().pathOf(dependency));
 
-                getLog().info(urlBuilder.toString());
+                getLog().info("Add to webapp classpath [" + urlBuilder.toString() + "]");
 
                 Resource lib = Resource.newResource(urlBuilder.toString());
 
