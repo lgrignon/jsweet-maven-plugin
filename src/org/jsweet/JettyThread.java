@@ -265,7 +265,9 @@ public class JettyThread extends TickThread {
                                         + getMojo().getMavenProject().getBuild().getFinalName()
                                         + "/WEB-INF/classes"
 
-                        )
+                        ),
+                        element(name("source"),"1.8"),
+                        element(name("target"),"1.8")
 
                 )
 
