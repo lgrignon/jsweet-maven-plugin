@@ -111,7 +111,9 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("/");
 
-        stringBuilder.append("classes/");
+        stringBuilder.append(getMojo().getMavenProject().getBuild().getFinalName());
+
+        stringBuilder.append("/WEBINF/classes");
 
         /* */
 
@@ -181,6 +183,13 @@ public class JettyThread extends TickThread {
 
             server.start();
 
+            while(!server.isRunning())
+            {
+                Thread.yield();
+            }
+
+            getLog().info("Jetty has started");
+
         } catch (Exception exception) {
 
             getLog().info(exception);
@@ -228,9 +237,17 @@ public class JettyThread extends TickThread {
 
         try {
 
-            getLog().info("Jetty is restarting ...");
+            getLog().info("Jetty is starting ...");
 
             server.start();
+
+            while (!server.isRunning()) {
+
+                Thread.yield();
+
+            }
+
+            getLog().info("Jetty has started ...");
 
         } catch (Exception exception) {
 
@@ -266,8 +283,8 @@ public class JettyThread extends TickThread {
                                         + "/WEB-INF/classes"
 
                         ),
-                        element(name("source"),"1.8"),
-                        element(name("target"),"1.8")
+                        element(name("source"),"8"),
+                        element(name("target"),"8")
 
                 )
 
