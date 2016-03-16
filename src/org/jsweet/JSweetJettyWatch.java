@@ -52,6 +52,8 @@ public class JSweetJettyWatch extends AbstractJSweetMojo {
 
     public void execute() throws MojoFailureException, MojoExecutionException {
 
+        System.setProperty("org.eclipse.jetty.io.LEVEL", "ALL");
+
         MavenProject project = getMavenProject();
 
         System.setErr(new PrintStream(new StdErrLogStream(getLog())));
