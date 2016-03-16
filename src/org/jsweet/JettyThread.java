@@ -105,19 +105,19 @@ public class JettyThread extends TickThread {
 
         stringBuilder.delete(0, stringBuilder.length());
 
-        stringBuilder.append("file://");
-
         stringBuilder.append(getMojo().getMavenProject().getBuild().getDirectory());
 
         stringBuilder.append("/");
 
         stringBuilder.append(getMojo().getMavenProject().getBuild().getFinalName());
 
-        stringBuilder.append("/WEBINF/classes");
+        stringBuilder.append("/WEB-INF/classes");
 
         /* */
 
         try {
+
+            getLog().info("WebApp classes directory [" + stringBuilder.toString() + "]");
 
             Resource classesResource = Resource.newResource(stringBuilder.toString());
 
