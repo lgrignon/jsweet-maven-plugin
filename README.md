@@ -1,10 +1,12 @@
 This is a fork of the JSweet Maven plugin .
 
 Keep in mind that this is not the original version .
-
 All the functionality are experimental and could change at any time .
+Do not expect any support , otherwise use the original version at [https://github.com/lgrignon/jsweet-maven-plugin](https://github.com/lgrignon/jsweet-maven-plugin)
 
-Do not expect any support , otherwise use the original version [https://github.com/lgrignon/jsweet-maven-plugin](https://github.com/lgrignon/jsweet-maven-plugin)
+This fork introduce a new mojo called "jetty-watch" which launch
+the jsweet transpiler and a jetty server in a parallel way .
+The mojo listen for file change and call the transpiler or reload the jetty instance on demands.
 
 # Plugin usage
 
