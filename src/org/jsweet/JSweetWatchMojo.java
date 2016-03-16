@@ -71,7 +71,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 List<Path> watchedPaths = new ArrayList<>();
 
-                int k = 0, l = 0;
+                int i , j ;
 
                 for (String sourcePath : sourcePaths) {
 
@@ -105,9 +105,9 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                         getLog().info("     - " + includedDirectories.length + " directory found .");
 
-                        for (k = 0, l = includedDirectories.length; k < l; k++) {
+                        for (i = 0, j = includedDirectories.length; i < j; i++) {
 
-                            includedDirectories[k] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[k];
+                            includedDirectories[i] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[i];
 
                         }
 
@@ -115,9 +115,9 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     /*  */
 
-                    for (k = 0, l = includedDirectories.length; k < l; k++) {
+                    for (i = 0, j = includedDirectories.length; i < j; i++) {
 
-                        Path path = Paths.get(includedDirectories[k]);
+                        Path path = Paths.get(includedDirectories[i]);
 
                         watchedPaths.add(path);
 
