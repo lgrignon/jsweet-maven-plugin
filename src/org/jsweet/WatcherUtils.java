@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchService;
-import java.util.ArrayList;
 import java.util.List;
 
 import static java.nio.file.StandardWatchEventKinds.*;
