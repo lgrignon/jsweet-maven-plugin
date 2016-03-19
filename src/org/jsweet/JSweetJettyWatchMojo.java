@@ -41,9 +41,6 @@ import static java.nio.file.StandardWatchEventKinds.*;
 @Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
-    @Parameter(defaultValue = "HIGH", required = false, readonly = true)
-    public String watcherSensitivity;
-
     private TranspilerThread transpilerThread;
 
     private JettyThread jettyThread;
@@ -412,7 +409,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
                 if (isJavaFile(filename.toString())) {
 
-                    getLog().info("Jsweet file change detected ! " + filename);
+                    getLog().info("Jsweet file change detected * " + filename);
 
                     transpilerThread.tick();
 
@@ -430,7 +427,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
             if (kind == ENTRY_DELETE) {
 
-                getLog().info("Jsweet file change detected ! " + filename);
+                getLog().info("Jsweet file change detected * " + filename);
 
                 transpilerThread.tick();
 

@@ -27,9 +27,6 @@ import static java.nio.file.StandardWatchEventKinds.*;
 @Mojo(name = "watch", defaultPhase = LifecyclePhase.TEST)
 public class JSweetWatchMojo extends AbstractJSweetMojo {
 
-    @Parameter(defaultValue = "HIGH", required = false, readonly = true)
-    public String watcherSensitivity;
-
     private TranspilerThread transpilerThread;
 
     private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
@@ -238,7 +235,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     if (isJavaFile(filename.toString())) {
 
-                        getLog().info("File change detected ! " + filename);
+                        getLog().info("File change detected * " + filename);
 
                         transpilerThread.tick();
 
