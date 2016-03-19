@@ -5,7 +5,9 @@ import org.apache.maven.model.Dependency;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.util.resource.URLResource;
 import org.eclipse.jetty.webapp.WebAppClassLoader;
@@ -61,13 +63,13 @@ public class JettyThread extends TickThread {
 
         server = new Server(8080);
 
-        /* */
+
+        /* Mount the application */
+
 
         WebAppContext webAppContext = new WebAppContext();
 
         webAppContext.setContextPath("/");
-
-        /* */
 
         WebAppClassLoader webAppClassLoader = null;
 
@@ -173,11 +175,53 @@ public class JettyThread extends TickThread {
 
         webAppContext.setClassLoader(webAppClassLoader);
 
-        /* */
 
-        server.setHandler(webAppContext);
 
-        /* */
+        /* to resolve source maps */
+
+
+
+        stringBuilder.delete(0,stringBuilder.length());
+
+        stringBuilder.append(getMojo().getMavenProject().getBasedir());
+
+        stringBuilder.append("/");
+
+        stringBuilder.append("src/main/java");
+
+        getLog().info("Source maps resource base [" + stringBuilder.toString() + "]");
+
+        WebAppContext javaSourcesContext = new WebAppContext();
+
+        javaSourcesContext.setContextPath("/java");
+
+        javaSourcesContext.setResourceBase(stringBuilder.toString());
+
+
+
+        /* Mount all the context */
+
+
+
+        ArrayList<Handler> handlers = new ArrayList<>();
+
+
+        handlers.add(webAppContext);
+
+        handlers.add(javaSourcesContext);
+
+
+        ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+
+        contextHandlerCollection.setHandlers(handlers.toArray(new Handler[handlers.size()]));
+
+        server.setHandler(contextHandlerCollection);
+
+
+
+        /* start the server */
+
+
 
         try {
 
