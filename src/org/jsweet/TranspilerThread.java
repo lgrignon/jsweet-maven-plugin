@@ -22,21 +22,17 @@ import org.jsweet.transpiler.JSweetTranspiler;
  * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
  */
 
-public class TranspilatorThread extends TickThread {
+public class TranspilerThread extends TickThread {
 
     private JSweetTranspiler transpiler;
 
-    public TranspilatorThread(AbstractJSweetMojo mojo) {
+    public TranspilerThread(AbstractJSweetMojo mojo , JSweetTranspiler transpiler ) {
 
         super(mojo);
 
-        setPriority(Thread.MAX_PRIORITY);
-
-    }
-
-    public void setTranspiler(JSweetTranspiler transpiler) {
-
         this.transpiler = transpiler;
+
+        setPriority(Thread.MAX_PRIORITY);
 
     }
 

@@ -30,7 +30,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
     @Parameter(defaultValue = "HIGH", required = false, readonly = true)
     public String watcherSensitivity;
 
-    private TranspilatorThread transpilatorThread;
+    private TranspilerThread transpilerThread;
 
     private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
 
@@ -42,13 +42,11 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
         getLog().info("- Starting transpiler thread  ... ");
 
-        transpilatorThread = new TranspilatorThread(this);
+        transpilerThread = new TranspilerThread(this,createJSweetTranspiler(project));
 
-        transpilatorThread.setTranspiler(createJSweetTranspiler(project));
+        transpilerThread.start();
 
-        transpilatorThread.start();
-
-        while (!transpilatorThread.isRunning()) {
+        while (!transpilerThread.isRunning()) {
 
             Thread.yield();
 
@@ -228,7 +226,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                         getLog().info("File change detected * " + filename);
 
-                        transpilatorThread.tick();
+                        transpilerThread.tick();
 
                     }
 
@@ -242,7 +240,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                         getLog().info("File change detected ! " + filename);
 
-                        transpilatorThread.tick();
+                        transpilerThread.tick();
 
                     } else {
 
@@ -260,7 +258,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                     getLog().info("File change detected ! " + filename);
 
-                    transpilatorThread.tick();
+                    transpilerThread.tick();
 
                 }
 

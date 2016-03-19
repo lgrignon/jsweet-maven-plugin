@@ -44,7 +44,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
     @Parameter(defaultValue = "HIGH", required = false, readonly = true)
     public String watcherSensitivity;
 
-    private TranspilatorThread transpilatorThread;
+    private TranspilerThread transpilerThread;
 
     private JettyThread jettyThread;
 
@@ -64,13 +64,11 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
         getLog().info("Transpilator output directory " + getOutDir());
 
-        transpilatorThread = new TranspilatorThread(this);
+        transpilerThread = new TranspilerThread(this, createJSweetTranspiler(project));
 
-        transpilatorThread.setTranspiler(createJSweetTranspiler(project));
+        transpilerThread.start();
 
-        transpilatorThread.start();
-
-        while (!transpilatorThread.isRunning()) {
+        while (!transpilerThread.isRunning()) {
 
             Thread.yield();
 
@@ -170,7 +168,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
             int k = 0, l = 0;
 
-            for ( String sourcePath : sourcePaths) {
+            for (String sourcePath : sourcePaths) {
 
                 getLog().info("     - Analysing " + sourcePath);
 
@@ -335,7 +333,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
             /* */
 
-            for (Path path : jettyWatchedPath ) {
+            for (Path path : jettyWatchedPath) {
 
                 try {
 
@@ -402,7 +400,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
                     getLog().info("Jsweet file change detected * " + filename);
 
-                    transpilatorThread.tick();
+                    transpilerThread.tick();
 
                 }
 
@@ -416,7 +414,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
                     getLog().info("Jsweet file change detected ! " + filename);
 
-                    transpilatorThread.tick();
+                    transpilerThread.tick();
 
                 } else {
 
@@ -434,7 +432,7 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
                 getLog().info("Jsweet file change detected ! " + filename);
 
-                transpilatorThread.tick();
+                transpilerThread.tick();
 
             }
 

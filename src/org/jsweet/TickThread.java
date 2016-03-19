@@ -139,12 +139,5 @@ public abstract class TickThread extends Thread {
 
     public abstract void execute();
 
-    /* */
-
-    private String generateRandomEntry() {
-
-        return "" + ((int) Math.random() * 10000);
-
-    }
 
 }
