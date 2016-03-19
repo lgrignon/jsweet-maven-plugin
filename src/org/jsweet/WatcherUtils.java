@@ -57,7 +57,7 @@ public class WatcherUtils {
 
     private static final SensitivityWatchEventModifier SENSITIVITY = SensitivityWatchEventModifier.HIGH;
 
-    public static void registerPaths(AbstractJSweetMojo mojo , WatchService watchService, List<Path> paths) {
+    public static void registerPaths(AbstractJSweetMojo mojo, WatchService watchService, List<Path> paths) {
 
         for (Path path : paths) {
 
@@ -67,9 +67,18 @@ public class WatcherUtils {
 
                 path.register(
 
-                        watchService,
+                        watchService
 
-                        new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
+                        ,
+
+                        new WatchEvent.Kind[]{
+
+                                ENTRY_MODIFY,
+                                ENTRY_CREATE,
+                                ENTRY_DELETE,
+                                OVERFLOW
+                        }
+                        ,
 
                         SENSITIVITY
 
