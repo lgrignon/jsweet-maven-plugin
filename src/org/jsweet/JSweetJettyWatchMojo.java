@@ -1,12 +1,12 @@
 package org.jsweet;
 
-import com.sun.nio.file.SensitivityWatchEventModifier;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
+
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
@@ -21,22 +21,25 @@ import java.util.List;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 /*
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
-/**
- * @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com
- */
+   Copyright 2016 Eric Ponthiaux -/- ponthiaux.eric@gmail.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+*/
+
+
+/* @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com */
 
 @Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
@@ -44,8 +47,6 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
     private TranspilerThread transpilerThread;
 
     private JettyThread jettyThread;
-
-    private SensitivityWatchEventModifier sensitivity = SensitivityWatchEventModifier.HIGH;
 
     public void execute() throws MojoFailureException, MojoExecutionException {
 
@@ -154,8 +155,6 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
         WatchService watchService = null;
 
-        ArrayList<Path> paths = new ArrayList<>();
-
         try {
 
             @SuppressWarnings("unchecked")
@@ -163,89 +162,20 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
             getLog().info("Updating jsweet source paths");
 
-            int k = 0, l = 0;
+            SourceScanner sourceScanner = new SourceScanner(
+                    this,
+                    sourcePaths,
+                    includes,
+                    excludes,
+                    sharedIncludes
 
-            for (String sourcePath : sourcePaths) {
-
-                getLog().info("     - Analysing " + sourcePath);
-
-                DirectoryScanner dirScanner = new DirectoryScanner();
-
-                dirScanner.setBasedir(new File(sourcePath));
-
-                dirScanner.setIncludes(ArrayUtils.addAll(includes, sharedIncludes));
-
-                dirScanner.setExcludes(excludes);
-
-                dirScanner.scan();
-
-                /*  */
-
-                String[] includedDirectories = dirScanner.getIncludedDirectories();
-
-                /*  */
-
-                if (includedDirectories.length == 0) {
-
-                    getLog().info("     - No source includes found , using [" + sourcePath + "]");
-
-                    includedDirectories = new String[]{sourcePath};
-
-                } else {
-
-                    getLog().info("     - " + includedDirectories.length + " directory found .");
-
-                    for (k = 0, l = includedDirectories.length; k < l; k++) {
-
-                        includedDirectories[k] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[k];
-
-                    }
-
-                }
-
-                /*  */
-
-                for (k = 0, l = includedDirectories.length; k < l; k++) {
-
-                    Path path = Paths.get(includedDirectories[k]);
-
-                    paths.add(path);
-
-                }
-
-                /*  */
-
-            }
-
-            /* */
+            );
 
             watchService = FileSystems.getDefault().newWatchService();
 
+            WatcherUtils.registerPaths(this, watchService, sourceScanner.scan());
+
             /* */
-
-            for (Path includedPath : paths) {
-
-                try {
-
-                    getLog().info("     - Registering [" + includedPath.toString() + "]");
-
-                    includedPath.register(
-
-                            watchService,
-
-                            new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
-
-                            sensitivity
-
-                    );
-
-                } catch (IOException ioException) {
-
-                    getLog().info("    * Cannot register [" + includedPath.toString() + "]", ioException);
-
-                }
-
-            }
 
         } catch (IOException ioException) {
 
@@ -261,8 +191,6 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
         WatchService watchService = null;
 
-        ArrayList<Path> jettyWatchedPath = new ArrayList<>();
-
         try {
 
             @SuppressWarnings("unchecked")
@@ -270,89 +198,20 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
             getLog().info("Updating server source paths");
 
-            int k = 0, l = 0;
+            SourceScanner sourceScanner = new SourceScanner(
+                    this,
+                    sourcePaths,
+                    excludes,
+                    includes,
+                    sharedIncludes
 
-            for (String sourcePath : sourcePaths) {
-
-                getLog().info("     - Analysing " + sourcePath);
-
-                DirectoryScanner dirScanner = new DirectoryScanner();
-
-                dirScanner.setBasedir(new File(sourcePath));
-
-                dirScanner.setIncludes(ArrayUtils.addAll(excludes, sharedIncludes));
-
-                dirScanner.setExcludes(includes);
-
-                dirScanner.scan();
-
-                /*  */
-
-                String[] includedDirectories = dirScanner.getIncludedDirectories();
-
-                /*  */
-
-                if (includedDirectories.length == 0) {
-
-                    getLog().info("     - No source includes found , using [" + sourcePath + "]");
-
-                    includedDirectories = new String[]{sourcePath};
-
-                } else {
-
-                    getLog().info("     - " + includedDirectories.length + " directory found .");
-
-                    for (k = 0, l = includedDirectories.length; k < l; k++) {
-
-                        includedDirectories[k] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[k];
-
-                    }
-
-                }
-
-                /*  */
-
-                for (k = 0, l = includedDirectories.length; k < l; k++) {
-
-                    Path path = Paths.get(includedDirectories[k]);
-
-                    jettyWatchedPath.add(path);
-
-                }
-
-                /*  */
-
-            }
-
-            /* */
+            );
 
             watchService = FileSystems.getDefault().newWatchService();
 
+            WatcherUtils.registerPaths(this, watchService, sourceScanner.scan());
+
             /* */
-
-            for (Path path : jettyWatchedPath) {
-
-                try {
-
-                    getLog().info("     - Registering [" + path.toString() + "]");
-
-                    path.register(
-
-                            watchService,
-
-                            new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
-
-                            sensitivity
-
-                    );
-
-                } catch (IOException ioException) {
-
-                    getLog().info("    * Cannot register [" + path.toString() + "]", ioException);
-
-                }
-
-            }
 
         } catch (IOException ioException) {
 
@@ -363,6 +222,8 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
         return watchService;
 
     }
+
+
 
     /* */
 

@@ -39,7 +39,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
         getLog().info("- Starting transpiler thread  ... ");
 
-        transpilerThread = new TranspilerThread(this,createJSweetTranspiler(project));
+        transpilerThread = new TranspilerThread(this, createJSweetTranspiler(project));
 
         transpilerThread.start();
 
@@ -64,93 +64,17 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
                 getLog().info("Updating watcher source paths");
 
-                List<Path> watchedPaths = new ArrayList<>();
-
-                int i , j ;
-
-                for (String sourcePath : sourcePaths) {
-
-                    /*  */
-
-                    getLog().info("     - Analysing " + sourcePath);
-
-                    DirectoryScanner dirScanner = new DirectoryScanner();
-
-                    dirScanner.setBasedir(new File(sourcePath));
-
-                    dirScanner.setIncludes(ArrayUtils.addAll(includes,sharedIncludes));
-
-                    dirScanner.setExcludes(excludes);
-
-                    dirScanner.scan();
-
-                    /*  */
-
-                    String[] includedDirectories = dirScanner.getIncludedDirectories();
-
-                    /*  */
-
-                    if (includedDirectories.length == 0) {
-
-                        getLog().info("     - No source includes found , using [" + sourcePath + "]");
-
-                        includedDirectories = new String[]{sourcePath};
-
-                    } else {
-
-                        getLog().info("     - " + includedDirectories.length + " directory found .");
-
-                        for (i = 0, j = includedDirectories.length; i < j; i++) {
-
-                            includedDirectories[i] = dirScanner.getBasedir().getPath() + System.getProperty("file.separator") + includedDirectories[i];
-
-                        }
-
-                    }
-
-                    /*  */
-
-                    for (i = 0, j = includedDirectories.length; i < j; i++) {
-
-                        Path path = Paths.get(includedDirectories[i]);
-
-                        watchedPaths.add(path);
-
-                    }
-
-                    /*  */
-
-                }
-
-                /* */
+                SourceScanner sourceScanner = new SourceScanner(
+                        this,
+                        sourcePaths,
+                        includes,
+                        excludes,
+                        sharedIncludes
+                );
 
                 WatchService watchService = FileSystems.getDefault().newWatchService();
 
-                /* */
-
-                for (Path includedDirectory :  watchedPaths ) {
-
-                    try {
-
-                        getLog().info("     - Registering [" + includedDirectory.toString() + "]");
-
-                        includedDirectory.register(
-
-                                watchService,
-
-                                new WatchEvent.Kind[]{ENTRY_MODIFY, ENTRY_CREATE, ENTRY_DELETE, OVERFLOW},
-
-                                sensitivity
-
-                        );
-
-                    } catch (IOException ioException) {
-
-                        getLog().info("    * Cannot register [" + includedDirectory.toString() + "]", ioException);
-
-                    }
-
-                }
+                WatcherUtils.registerPaths(this, watchService, sourceScanner.scan());
 
                 /* */
 
@@ -159,8 +83,6 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
                 /* */
 
                 try {
-
-                    getLog().info("- Closing watcher");
 
                     watchService.close();
 
