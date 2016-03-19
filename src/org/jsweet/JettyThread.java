@@ -26,6 +26,7 @@ import java.util.List;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 /*
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,6 +38,7 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 
@@ -129,9 +131,13 @@ public class JettyThread extends TickThread {
 
             getLog().info(stringBuilder.toString(), malformedURLException);
 
+            return;
+
         } catch (IOException ioException) {
 
             getLog().info(stringBuilder.toString(), ioException);
+
+            return;
 
         }
 
@@ -168,6 +174,8 @@ public class JettyThread extends TickThread {
             } catch (IOException ioException) {
 
                 getLog().info(urlBuilder.toString(),ioException);
+
+                return;
 
             }
 
@@ -238,6 +246,8 @@ public class JettyThread extends TickThread {
 
             getLog().info(exception);
 
+            return;
+
         }
 
     }
@@ -262,6 +272,8 @@ public class JettyThread extends TickThread {
         } catch (Exception exception) {
 
             getLog().info(exception);
+
+            return;
 
         }
 
@@ -296,6 +308,8 @@ public class JettyThread extends TickThread {
         } catch (Exception exception) {
 
             getLog().info(exception);
+
+            return;
 
         }
 

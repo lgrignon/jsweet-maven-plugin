@@ -39,7 +39,7 @@ import static java.nio.file.StandardWatchEventKinds.*;
  */
 
 @Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
-public class JSweetJettyWatch extends AbstractJSweetMojo {
+public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
     @Parameter(defaultValue = "HIGH", required = false, readonly = true)
     public String watcherSensitivity;
