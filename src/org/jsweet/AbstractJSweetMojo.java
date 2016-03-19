@@ -25,10 +25,8 @@ import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.ResolutionNode;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
-import org.apache.maven.plugin.AbstractMojo;
-import org.apache.maven.plugin.BuildPluginManager;
-import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.*;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -126,6 +124,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Component
     private BuildPluginManager pluginManager;
 
+    @Parameter(defaultValue = "${mojoExecution}", readonly = true)
+    private MojoExecution mojoExecution;
+
+    @Parameter(defaultValue = "${plugin}", readonly = true) // Maven 3 only
+    private PluginDescriptor pluginDescriptor;
+
     private void logInfo(String content) {
         if (verbose) {
             getLog().info(content);
@@ -141,7 +145,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         @SuppressWarnings("unchecked")
         List<String> sourcePaths = project.getCompileSourceRoots();
 
-        logInfo("source includes: " + ArrayUtils.toString(ArrayUtils.addAll(includes,sharedIncludes)));
+        logInfo("source includes: " + ArrayUtils.toString(ArrayUtils.addAll(includes, sharedIncludes)));
         logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
         logInfo("sources paths: " + sourcePaths);
@@ -150,7 +154,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         for (String sourcePath : sourcePaths) {
             DirectoryScanner dirScanner = new DirectoryScanner();
             dirScanner.setBasedir(new File(sourcePath));
-            dirScanner.setIncludes(ArrayUtils.addAll(includes,sharedIncludes));
+            dirScanner.setIncludes(ArrayUtils.addAll(includes, sharedIncludes));
             dirScanner.setExcludes(excludes);
             dirScanner.scan();
 
@@ -356,4 +360,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     public String[] getSharedIncludes() {
         return sharedIncludes;
     }
+
+    public PluginDescriptor getPluginDescriptor() {
+        return pluginDescriptor;
+    }
+
+    public MojoExecution getMojoExecution() {
+        return mojoExecution;
+    }
+
 }
