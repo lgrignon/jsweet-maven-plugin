@@ -81,11 +81,11 @@ public class SourceScanner {
 
             dirScanner.scan();
 
-                /*  */
+            /*  */
 
             String[] includedDirectories = dirScanner.getIncludedDirectories();
 
-                /*  */
+            /*  */
 
             if (includedDirectories.length == 0) {
 
