@@ -36,7 +36,7 @@
     </licenses>
 
     <build>
-        <sourceDirectory>src</sourceDirectory>
+
         <plugins>
 
             <plugin>
