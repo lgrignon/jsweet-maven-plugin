@@ -1,5 +1,6 @@
 /* 
  * Copyright (C) 2015 Louis Grignon <louis.grignon@gmail.com>
+ * Copyright (C) 2016 Eric Ponthiaux <ponthiaux.eric@gmail.com>
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
