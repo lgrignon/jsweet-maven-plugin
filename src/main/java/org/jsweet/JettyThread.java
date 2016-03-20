@@ -1,33 +1,15 @@
 package org.jsweet;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.repository.metadata.Plugin;
-import org.apache.maven.model.Dependency;
-import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.project.MavenProject;
-import org.codehaus.plexus.component.repository.ComponentDependency;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.util.resource.Resource;
-import org.eclipse.jetty.util.resource.URLResource;
-import org.eclipse.jetty.webapp.WebAppClassLoader;
-import org.eclipse.jetty.webapp.WebAppContext;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Scanner;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
@@ -59,7 +41,9 @@ public class JettyThread extends TickThread {
 
     private ProcessBuilder processBuilder;
 
-    private Process currentJettyProcess ;
+    private Process currentJettyProcess;
+
+    private IOThread processIOThread;
 
     public JettyThread(AbstractJSweetMojo mojo) {
 
@@ -147,13 +131,6 @@ public class JettyThread extends TickThread {
 
                 getJsweetMavenPluginJar(pluginDependencies)
 
-                ,
-
-                "-webappCp"
-
-                ,
-
-                buildDependenciesClassPath(webAppDependencies)
 
         );
 
@@ -215,7 +192,9 @@ public class JettyThread extends TickThread {
 
             getLog().info("- calling jetty");
 
-            currentJettyProcess = processBuilder.inheritIO().start();
+            currentJettyProcess = processBuilder.start();
+
+            inheritIO(currentJettyProcess.getInputStream(),currentJettyProcess.getErrorStream());
 
         } catch (IOException ioException) {
 
@@ -246,6 +225,76 @@ public class JettyThread extends TickThread {
         }
 
         return "*";
+
+    }
+
+    private void inheritIO(final InputStream inputStream , final InputStream errorStream ) {
+
+        if (processIOThread != null && processIOThread.isAlive()) {
+
+            processIOThread.kill();
+
+            while (processIOThread.isAlive()) {
+
+                Thread.yield();
+            }
+
+        }
+
+        processIOThread = new IOThread(inputStream,errorStream);
+
+        processIOThread.start();
+
+    }
+
+    private class IOThread extends Thread {
+
+        private InputStream stream;
+
+        private InputStream errorStream;
+
+        private boolean run = true;
+
+        public IOThread(InputStream stream , InputStream errorStream ) {
+
+            this.stream = stream;
+
+            this.errorStream = errorStream;
+        }
+
+        public void kill() {
+
+            this.run = false;
+
+        }
+
+        public void run() {
+
+            while (this.run) {
+
+                Scanner scs = new Scanner(this.stream);
+
+                while (scs.hasNextLine()) {
+
+                    getLog().info(scs.nextLine());
+
+                }
+
+                Thread.yield();
+
+                Scanner sce = new Scanner(this.errorStream);
+
+                while (sce.hasNextLine()) {
+
+                    getLog().info(sce.nextLine());
+
+                }
+
+                Thread.yield();
+
+            }
+
+        }
 
     }
 
@@ -292,14 +341,15 @@ public class JettyThread extends TickThread {
 
         try {
 
-            currentJettyProcess =  processBuilder.inheritIO().start();
+            currentJettyProcess = processBuilder.start();
 
-        } catch (Exception exception) {
+            inheritIO(currentJettyProcess.getInputStream(),currentJettyProcess.getErrorStream());
 
-            return;
+        } catch (IOException ioException) {
+
+            getLog().info(ioException);
 
         }
-
 
     }
 

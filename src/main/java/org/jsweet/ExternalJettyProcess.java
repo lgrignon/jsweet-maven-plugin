@@ -19,8 +19,6 @@ public class ExternalJettyProcess {
 
     public static void main(String args[]) {
 
-        System.err.println("--->" + System.getenv("RESOURCE_BASE"));
-
         Server server;
 
         server = new Server(8080);
@@ -37,20 +35,20 @@ public class ExternalJettyProcess {
 
         } catch (IOException ioException) {
 
-            System.err.println(ioException);
+            System.out.println(ioException);
 
             return;
 
         }
 
-        System.err.println("Server resource base [" + System.getenv("RESOURCE_BASE") + "]");
+        System.out.println("Server resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
         webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
 
         try {
 
-            System.err.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+            System.out.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
             Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
@@ -70,13 +68,13 @@ public class ExternalJettyProcess {
 
         }
 
-        String dependencies[] = args[1].split(";");
+        String dependencies[] = System.getenv("WEBAPP_DEPENDENCIES").split(";");
 
         for (String dependency : dependencies) {
 
             try {
 
-                System.err.println("Add to webapp classpath [" + dependency + "]");
+                System.out.println("Add to webapp classpath [" + dependency + "]");
 
                 Resource lib = Resource.newResource(dependency);
 
