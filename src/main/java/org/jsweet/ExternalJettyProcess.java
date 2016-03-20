@@ -37,7 +37,7 @@ public class ExternalJettyProcess {
 
     private static final int SERVER_PORT = 8080;
 
-    public static void main(String args[]) {
+    public static void main( String args[] ) {
 
         System.setProperty("org.eclipse.jetty.io.LEVEL", "DEBUG");
 
@@ -121,14 +121,17 @@ public class ExternalJettyProcess {
 
         javaSourcesContext.setResourceBase(System.getenv("ADDITIONAL_RESOURCE_BASE"));
 
+        /* */
 
         ArrayList<Handler> handlers = new ArrayList<>();
 
+        /* */
 
         handlers.add(webAppContext);
 
         handlers.add(javaSourcesContext);
 
+        /* */
 
         ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
 

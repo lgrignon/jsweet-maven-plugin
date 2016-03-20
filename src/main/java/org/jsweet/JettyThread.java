@@ -385,8 +385,8 @@ public class JettyThread extends TickThread {
                                         + "/WEB-INF/classes"
 
                         ),
-                        element(name("source"), "8"),
-                        element(name("target"), "8"),
+                        element(name("source"), "1.8"),
+                        element(name("target"), "1.8"),
                         element("useIncrementalCompilation", "true")
 
                 )
