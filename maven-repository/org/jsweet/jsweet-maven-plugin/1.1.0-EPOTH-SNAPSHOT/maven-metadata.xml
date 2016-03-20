@@ -5,20 +5,20 @@
   <version>1.1.0-EPOTH-SNAPSHOT</version>
   <versioning>
     <snapshot>
-      <timestamp>20160320.134642</timestamp>
-      <buildNumber>3</buildNumber>
+      <timestamp>20160320.151454</timestamp>
+      <buildNumber>4</buildNumber>
     </snapshot>
-    <lastUpdated>20160320134642</lastUpdated>
+    <lastUpdated>20160320151454</lastUpdated>
     <snapshotVersions>
       <snapshotVersion>
         <extension>jar</extension>
-        <value>1.1.0-EPOTH-20160320.134642-3</value>
-        <updated>20160320134642</updated>
+        <value>1.1.0-EPOTH-20160320.151454-4</value>
+        <updated>20160320151454</updated>
       </snapshotVersion>
       <snapshotVersion>
         <extension>pom</extension>
-        <value>1.1.0-EPOTH-20160320.134642-3</value>
-        <updated>20160320134642</updated>
+        <value>1.1.0-EPOTH-20160320.151454-4</value>
+        <updated>20160320151454</updated>
       </snapshotVersion>
     </snapshotVersions>
   </versioning>
