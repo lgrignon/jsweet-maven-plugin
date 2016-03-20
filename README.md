@@ -11,7 +11,7 @@ The mojo listen for file change and call the transpiler or reload the jetty inst
 # Plugin usage
 
 ```
-$  mvn jsweet:jetty-watch
+$  mvn clean install jsweet:jetty-watch
 ```
 
 A complete example can be found at :
