@@ -380,7 +380,8 @@ public class JettyThread extends TickThread {
 
                         ),
                         element(name("source"), "8"),
-                        element(name("target"), "8")
+                        element(name("target"), "8"),
+                        element("useIncrementalCompilation","true")
 
                 )
 
