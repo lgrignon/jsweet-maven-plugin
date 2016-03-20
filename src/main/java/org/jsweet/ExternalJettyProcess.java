@@ -19,22 +19,11 @@ public class ExternalJettyProcess {
 
     public static void main(String args[]) {
 
-        String baseDir = args[0];
-
-        String buildDirectory = args[1];
-
-        String finalName = args[2];
-
-        String serverclassPath = args[3];
+        System.err.println("--->" + System.getenv("RESOURCE_BASE"));
 
         Server server;
 
-        System.out.println("Jetty thread started ... ");
-
         server = new Server(8080);
-
-        /* Mount the application */
-
 
         WebAppContext webAppContext = new WebAppContext();
 
@@ -48,77 +37,46 @@ public class ExternalJettyProcess {
 
         } catch (IOException ioException) {
 
-            System.out.println(ioException);
+            System.err.println(ioException);
 
             return;
 
         }
 
-        /* */
+        System.err.println("Server resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
-        StringBuilder stringBuilder = new StringBuilder();
+        webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
-        stringBuilder.append(baseDir);
-
-        stringBuilder.append("/");
-
-        stringBuilder.append("src/main/webapp");
-
-        /* */
-
-        System.out.println("Server resource base [" + stringBuilder.toString() + "]");
-
-        /* */
-
-        webAppContext.setResourceBase(stringBuilder.toString());
-
-        /* */
-
-        stringBuilder.delete(0, stringBuilder.length());
-
-        stringBuilder.append(buildDirectory);
-
-        stringBuilder.append("/");
-
-        stringBuilder.append(finalName);
-
-        stringBuilder.append("/WEB-INF/classes");
-
-        /* */
 
         try {
 
-            System.out.println("WebApp classes directory [" + stringBuilder.toString() + "]");
+            System.err.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
-            Resource classesResource = Resource.newResource(stringBuilder.toString());
+            Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
             webAppClassLoader.addClassPath(classesResource);
 
         } catch (MalformedURLException malformedURLException) {
 
-            System.out.println(malformedURLException);
+            System.err.println(malformedURLException);
 
             return;
 
         } catch (IOException ioException) {
 
-            System.out.println(ioException);
+            System.err.println(ioException);
 
             return;
 
         }
 
-        /* */
-
-        String dependencies[] = serverclassPath.split(";");
-
-        /* */
+        String dependencies[] = args[1].split(";");
 
         for (String dependency : dependencies) {
 
             try {
 
-                System.out.println("Add to webapp classpath [" + dependency + "]");
+                System.err.println("Add to webapp classpath [" + dependency + "]");
 
                 Resource lib = Resource.newResource(dependency);
 
@@ -141,29 +99,13 @@ public class ExternalJettyProcess {
         webAppContext.setClassLoader(webAppClassLoader);
 
 
-
-        /* to resolve source maps */
-
-
-        stringBuilder.delete(0, stringBuilder.length());
-
-        stringBuilder.append(baseDir);
-
-        stringBuilder.append("/");
-
-        stringBuilder.append("src/main/java");
-
-        System.out.println("Source maps resource base [" + stringBuilder.toString() + "]");
+        System.out.println("Source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
 
         WebAppContext javaSourcesContext = new WebAppContext();
 
         javaSourcesContext.setContextPath("/java");
 
-        javaSourcesContext.setResourceBase(stringBuilder.toString());
-
-
-
-        /* Mount all the context */
+        javaSourcesContext.setResourceBase(System.getenv("ADDITIONAL_RESOURCE_BASE"));
 
 
         ArrayList<Handler> handlers = new ArrayList<>();
@@ -180,20 +122,11 @@ public class ExternalJettyProcess {
 
         server.setHandler(contextHandlerCollection);
 
-
-
-        /* start the server */
-
-
         try {
 
             server.start();
 
-            while (!server.isRunning()) {
-                Thread.yield();
-            }
-
-            System.out.println("Jetty has started");
+            server.join();
 
         } catch (Exception exception) {
 
@@ -202,7 +135,6 @@ public class ExternalJettyProcess {
             return;
 
         }
-
 
     }
 

@@ -1,5 +1,7 @@
 package org.jsweet;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.artifact.repository.metadata.Plugin;
 import org.apache.maven.model.Dependency;
@@ -15,6 +17,7 @@ import org.eclipse.jetty.util.resource.URLResource;
 import org.eclipse.jetty.webapp.WebAppClassLoader;
 import org.eclipse.jetty.webapp.WebAppContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -54,28 +57,117 @@ public class JettyThread extends TickThread {
 
     private Server server;
 
+    private ProcessBuilder processBuilder;
+
+    private Process currentJettyProcess ;
+
     public JettyThread(AbstractJSweetMojo mojo) {
 
         super(mojo);
 
     }
 
+    private File prepareJettyInstall(List<Artifact> pluginDependencies) throws IOException {
+
+        getLog().info("- validating jetty install ");
+
+        File baseInstallDirectory = new File(getMojo().getMavenProject().getBuild().getDirectory() + "/.jetty/");
+
+        if (!baseInstallDirectory.exists()) {
+
+            baseInstallDirectory.mkdir();
+
+            getLog().info("- create " + baseInstallDirectory.getCanonicalPath());
+
+        }
+
+        for (Artifact dependency : pluginDependencies) {
+
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.append(getMojo().getMavenSession().getLocalRepository().getBasedir());
+
+            stringBuilder.append("/");
+
+            stringBuilder.append(getMojo().getMavenSession().getLocalRepository().pathOf(dependency));
+
+            File targetFile = new File(stringBuilder.toString());
+
+            File destinationFile = new File(baseInstallDirectory.getCanonicalPath() + "/" + targetFile.getName());
+
+            if (!destinationFile.exists()) {
+
+                getLog().info("- copy " + targetFile.getName() + " to " + destinationFile.getCanonicalPath());
+
+                FileUtils.copyFile(
+                        targetFile,
+                        destinationFile
+                );
+
+            }
+
+        }
+
+        getLog().info("- Jetty install validated");
+
+        return baseInstallDirectory;
+
+    }
+
     @Override
     public void onRun() {
 
-        /* */
-
-        ArrayList<String> commands = new ArrayList<String>();
-
-        commands.add(createCommand());
-
-        /* */
-
-        ProcessBuilder processBuilder = new ProcessBuilder(commands);
-
-        /* */
-
         getLog().info("Jetty thread started ... ");
+
+        List<Artifact> pluginDependencies = getMojo().getPluginDescriptor().getArtifacts();
+
+        List<Artifact> webAppDependencies = getMojo().getMavenProject().getCompileArtifacts();
+
+        File baseJettyPath = null;
+
+        try {
+
+            baseJettyPath = prepareJettyInstall(pluginDependencies);
+
+        } catch (IOException ioException) {
+
+            getLog().info(ioException);
+
+        }
+
+        /* */
+
+        processBuilder = new ProcessBuilder(
+
+                getJavaExecutablePath(),
+
+                "-jar"
+
+                ,
+
+                getJsweetMavenPluginJar(pluginDependencies)
+
+                ,
+
+                "-webappCp"
+
+                ,
+
+                buildDependenciesClassPath(webAppDependencies)
+
+        );
+
+        processBuilder.directory(baseJettyPath);
+
+        /* add webapp dependencies */
+
+        getLog().info("- building webapp dependencies");
+
+        processBuilder.environment().put("WEBAPP_DEPENDENCIES", buildDependenciesClassPath(webAppDependencies));
+
+        /* */
+
+        getLog().info("- building webapp resource base");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -87,13 +179,11 @@ public class JettyThread extends TickThread {
 
         processBuilder.environment().put("RESOURCE_BASE", stringBuilder.toString());
 
+        /* */
+
+        getLog().info("- building webapp server classes base");
+
         stringBuilder.delete(0, stringBuilder.length());
-
-        /* */
-
-        getLog().info("Server resource base [" + stringBuilder.toString() + "]");
-
-        /* */
 
         stringBuilder.append(getMojo().getMavenProject().getBuild().getDirectory());
 
@@ -103,15 +193,11 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("/WEB-INF/classes");
 
-        stringBuilder.append(";");
-
-        /* */
-
-        List<Artifact> dependencies = getMojo().getMavenProject().getCompileArtifacts();
-
-        processBuilder.environment().put("SERVER_CLASSPATH", buildDependenciesClassPath(dependencies));
+        processBuilder.environment().put("SERVER_CLASSES", stringBuilder.toString());
 
         /* to resolve source maps */
+
+        getLog().info("- building source maps resolver");
 
         stringBuilder.delete(0, stringBuilder.length());
 
@@ -127,9 +213,11 @@ public class JettyThread extends TickThread {
 
         try {
 
-            processBuilder.start();
+            getLog().info("- calling jetty");
 
-        } catch (IOException ioException ) {
+            currentJettyProcess = processBuilder.inheritIO().start();
+
+        } catch (IOException ioException) {
 
             getLog().info(ioException);
 
@@ -137,29 +225,35 @@ public class JettyThread extends TickThread {
 
     }
 
-    private String createCommand() {
+    private String getJsweetMavenPluginJar(List<Artifact> artifacts) {
 
-        List<Artifact> pluginDependencies = getMojo().getPluginDescriptor().getArtifacts();
+        for (Artifact dependency : artifacts) {
 
-        StringBuilder stringBuilder = new StringBuilder();
+            if (dependency.getArtifactId().indexOf("jsweet-maven-plugin") != -1) {
 
-        stringBuilder.append(System.getProperty("java.home"));
+                StringBuilder stringBuilder = new StringBuilder();
 
-        stringBuilder.append("/bin/");
+                stringBuilder.append(getMojo().getMavenSession().getLocalRepository().getBasedir());
 
-        stringBuilder.append("java ");
+                stringBuilder.append("/");
 
-        stringBuilder.append("-cp \"");
+                stringBuilder.append(getMojo().getMavenSession().getLocalRepository().pathOf(dependency));
 
-        stringBuilder.append(buildDependenciesClassPath(pluginDependencies)).append("\"");
+                return new File(stringBuilder.toString()).getName();
 
-        stringBuilder.append(" ").append(ExternalJettyProcess.class.getName());
+            }
 
-        System.out.println(stringBuilder.toString());
+        }
 
-        return stringBuilder.toString();
+        return "*";
+
     }
 
+    private String getJavaExecutablePath() {
+
+        return System.getProperty("java.home") + "/bin/java";
+
+    }
 
     private String buildDependenciesClassPath(List<Artifact> artifacts) {
 
@@ -179,15 +273,26 @@ public class JettyThread extends TickThread {
 
         return stringBuilder.toString();
 
-
     }
 
     @Override
     public void execute() {
 
+        currentJettyProcess.destroy();
+
         try {
 
             compile();
+
+        } catch (Exception exception) {
+
+            return;
+
+        }
+
+        try {
+
+            currentJettyProcess =  processBuilder.inheritIO().start();
 
         } catch (Exception exception) {
 
