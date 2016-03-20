@@ -42,14 +42,11 @@ import static java.nio.file.StandardWatchEventKinds.*;
 @Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
 
-
     private TranspilerThread transpilerThread;
 
     private JettyThread jettyThread;
 
     public void execute() throws MojoFailureException, MojoExecutionException {
-
-        System.setProperty("org.eclipse.jetty.io.LEVEL", "ALL");
 
         MavenProject project = getMavenProject();
 
