@@ -117,7 +117,7 @@ public class JettyThread extends TickThread {
 
         }
 
-        /* */
+        /* Launch the jetty process */
 
         processBuilder = new ProcessBuilder(
 
@@ -128,7 +128,6 @@ public class JettyThread extends TickThread {
                 ,
 
                 getJsweetMavenPluginJar(pluginDependencies)
-
 
         );
 
@@ -152,6 +151,8 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("src/main/webapp");
 
+        getLog().debug("- webapp resource base [" + stringBuilder.toString() + "]");
+
         processBuilder.environment().put("RESOURCE_BASE", stringBuilder.toString());
 
         /* */
@@ -168,6 +169,8 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("/WEB-INF/classes");
 
+        getLog().debug("- webapp server classes base [" + stringBuilder.toString() + "]");
+
         processBuilder.environment().put("SERVER_CLASSES", stringBuilder.toString());
 
         /* to resolve source maps */
@@ -182,7 +185,7 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("src/main/java");
 
-        getLog().debug("Source maps resource base [" + stringBuilder.toString() + "]");
+        getLog().debug("- source maps resolver [" + stringBuilder.toString() + "]");
 
         processBuilder.environment().put("ADDITIONAL_RESOURCE_BASE", stringBuilder.toString());
 
@@ -276,6 +279,8 @@ public class JettyThread extends TickThread {
 
                     getLog().info(scs.nextLine());
 
+                    /*  greases the wheels */
+
                     Thread.yield();
 
                 }
@@ -286,9 +291,13 @@ public class JettyThread extends TickThread {
 
                     getLog().info(sce.nextLine());
 
+                     /*  greases the wheels */
+
                     Thread.yield();
 
                 }
+
+                 /*  greases the wheels */
 
                 Thread.yield();
 
