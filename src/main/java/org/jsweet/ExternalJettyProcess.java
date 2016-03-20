@@ -39,7 +39,7 @@ public class ExternalJettyProcess {
 
     public static void main(String args[]) {
 
-        System.setProperty("org.eclipse.jetty.io.LEVEL", "ALL");
+        System.setProperty("org.eclipse.jetty.io.LEVEL", "DEBUG");
 
         Server server = new Server(SERVER_PORT);
 
@@ -61,14 +61,13 @@ public class ExternalJettyProcess {
 
         }
 
-        System.out.println("- Jetty server resource base [" + System.getenv("RESOURCE_BASE") + "]");
+        System.out.println("- Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
         webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
-
         try {
 
-            //System.out.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+            System.out.println("- Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
             Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
@@ -93,8 +92,6 @@ public class ExternalJettyProcess {
         for (String dependency : dependencies) {
 
             try {
-
-                // System.out.println("Add to webapp classpath [" + dependency + "]");
 
                 Resource lib = Resource.newResource(dependency);
 

@@ -37,8 +37,6 @@ import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
 public class JettyThread extends TickThread {
 
-    private Server server;
-
     private ProcessBuilder processBuilder;
 
     private Process currentJettyProcess;
@@ -61,7 +59,7 @@ public class JettyThread extends TickThread {
 
             baseInstallDirectory.mkdir();
 
-            getLog().info("- create " + baseInstallDirectory.getCanonicalPath());
+            getLog().debug("- create " + baseInstallDirectory.getCanonicalPath());
 
         }
 
@@ -81,7 +79,7 @@ public class JettyThread extends TickThread {
 
             if (!destinationFile.exists()) {
 
-                getLog().info("- copy " + targetFile.getName() + " to " + destinationFile.getCanonicalPath());
+                getLog().debug("- copy " + targetFile.getName() + " to " + destinationFile.getCanonicalPath());
 
                 FileUtils.copyFile(
                         targetFile,
@@ -101,7 +99,7 @@ public class JettyThread extends TickThread {
     @Override
     public void onRun() {
 
-        getLog().info("Jetty thread started ... ");
+        getLog().info("- Starting jetty ... ");
 
         List<Artifact> pluginDependencies = getMojo().getPluginDescriptor().getArtifacts();
 
@@ -138,13 +136,13 @@ public class JettyThread extends TickThread {
 
         /* add webapp dependencies */
 
-        getLog().info("- building webapp dependencies");
+        getLog().debug("- Building webapp dependencies");
 
         processBuilder.environment().put("WEBAPP_DEPENDENCIES", buildDependenciesClassPath(webAppDependencies));
 
         /* */
 
-        getLog().info("- building webapp resource base");
+        getLog().debug("- building webapp resource base");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -158,7 +156,7 @@ public class JettyThread extends TickThread {
 
         /* */
 
-        getLog().info("- building webapp server classes base");
+        getLog().debug("- building webapp server classes base");
 
         stringBuilder.delete(0, stringBuilder.length());
 
@@ -184,17 +182,17 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("src/main/java");
 
-        getLog().info("Source maps resource base [" + stringBuilder.toString() + "]");
+        getLog().debug("Source maps resource base [" + stringBuilder.toString() + "]");
 
         processBuilder.environment().put("ADDITIONAL_RESOURCE_BASE", stringBuilder.toString());
 
         try {
 
-            getLog().info("- calling jetty");
+            getLog().debug("- calling jetty");
 
             currentJettyProcess = processBuilder.start();
 
-            inheritIO(currentJettyProcess.getInputStream(),currentJettyProcess.getErrorStream());
+            inheritIO(currentJettyProcess.getInputStream(), currentJettyProcess.getErrorStream());
 
         } catch (IOException ioException) {
 
@@ -228,7 +226,7 @@ public class JettyThread extends TickThread {
 
     }
 
-    private void inheritIO(final InputStream inputStream , final InputStream errorStream ) {
+    private void inheritIO(final InputStream inputStream, final InputStream errorStream) {
 
         if (processIOThread != null && processIOThread.isAlive()) {
 
@@ -241,7 +239,7 @@ public class JettyThread extends TickThread {
 
         }
 
-        processIOThread = new IOThread(inputStream,errorStream);
+        processIOThread = new IOThread(inputStream, errorStream);
 
         processIOThread.start();
 
@@ -255,7 +253,7 @@ public class JettyThread extends TickThread {
 
         private boolean run = true;
 
-        public IOThread(InputStream stream , InputStream errorStream ) {
+        public IOThread(InputStream stream, InputStream errorStream) {
 
             this.stream = stream;
 
@@ -278,15 +276,17 @@ public class JettyThread extends TickThread {
 
                     getLog().info(scs.nextLine());
 
-                }
+                    Thread.yield();
 
-                Thread.yield();
+                }
 
                 Scanner sce = new Scanner(this.errorStream);
 
                 while (sce.hasNextLine()) {
 
                     getLog().info(sce.nextLine());
+
+                    Thread.yield();
 
                 }
 
@@ -327,7 +327,11 @@ public class JettyThread extends TickThread {
     @Override
     public void execute() {
 
+        getLog().info("- Stopping jetty");
+
         currentJettyProcess.destroy();
+
+        getLog().info("- Jetty stopped");
 
         try {
 
@@ -341,9 +345,11 @@ public class JettyThread extends TickThread {
 
         try {
 
+            getLog().info("- Starting jetty");
+
             currentJettyProcess = processBuilder.start();
 
-            inheritIO(currentJettyProcess.getInputStream(),currentJettyProcess.getErrorStream());
+            inheritIO(currentJettyProcess.getInputStream(), currentJettyProcess.getErrorStream());
 
         } catch (IOException ioException) {
 
@@ -381,7 +387,7 @@ public class JettyThread extends TickThread {
                         ),
                         element(name("source"), "8"),
                         element(name("target"), "8"),
-                        element("useIncrementalCompilation","true")
+                        element("useIncrementalCompilation", "true")
 
                 )
 
