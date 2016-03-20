@@ -35,13 +35,13 @@ import java.util.ArrayList;
 
 public class ExternalJettyProcess {
 
+    private static final int SERVER_PORT = 8080;
+
     public static void main(String args[]) {
 
         System.setProperty("org.eclipse.jetty.io.LEVEL", "ALL");
 
-        Server server;
-
-        server = new Server(8080);
+        Server server = new Server(SERVER_PORT);
 
         WebAppContext webAppContext = new WebAppContext();
 
@@ -61,14 +61,14 @@ public class ExternalJettyProcess {
 
         }
 
-        System.out.println("Server resource base [" + System.getenv("RESOURCE_BASE") + "]");
+        System.out.println("- Jetty server resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
         webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
 
         try {
 
-            System.out.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+            //System.out.println("WebApp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
             Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
@@ -94,7 +94,7 @@ public class ExternalJettyProcess {
 
             try {
 
-                System.out.println("Add to webapp classpath [" + dependency + "]");
+                // System.out.println("Add to webapp classpath [" + dependency + "]");
 
                 Resource lib = Resource.newResource(dependency);
 
@@ -116,8 +116,7 @@ public class ExternalJettyProcess {
 
         webAppContext.setClassLoader(webAppClassLoader);
 
-
-        System.out.println("Source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
+        System.out.println("- Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
 
         WebAppContext javaSourcesContext = new WebAppContext();
 
@@ -143,6 +142,8 @@ public class ExternalJettyProcess {
         try {
 
             server.start();
+
+            System.out.println("- Jetty is listening on port " + SERVER_PORT);
 
             server.join();
 
