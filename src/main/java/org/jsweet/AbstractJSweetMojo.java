@@ -43,6 +43,7 @@ import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 public abstract class AbstractJSweetMojo extends AbstractMojo {
 
+    
     @Parameter(alias = "target", defaultValue = "ES3", required = true, readonly = true)
     protected EcmaScriptComplianceLevel targetVersion;
 
