@@ -64,7 +64,7 @@
 
                 <!-- When starting jetty we have all the dependencies in only one directory -->
                 <!-- Instead of having to resolve dependencies trough the local maven repository -->
-                <!-- This start or restart jetty faster -->
+                <!-- Jetty start or restart faster  -->
 
                 <configuration>
                     <archive>
