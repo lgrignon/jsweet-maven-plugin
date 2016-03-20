@@ -36,7 +36,6 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 */
 
-
 /* @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com */
 
 @Mojo(name = "jetty-watch", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.COMPILE)
@@ -49,8 +48,6 @@ public class JSweetJettyWatchMojo extends AbstractJSweetMojo {
     public void execute() throws MojoFailureException, MojoExecutionException {
 
         MavenProject project = getMavenProject();
-
-        System.setErr(new PrintStream(new StdErrLogStream(getLog())));
 
         setOutDir(project.getBasedir() + "/src/main/webapp/" + getRelativeOutDir());
 
