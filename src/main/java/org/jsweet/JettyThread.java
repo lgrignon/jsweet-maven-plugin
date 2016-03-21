@@ -279,8 +279,6 @@ public class JettyThread extends TickThread {
 
                     getLog().info(scs.nextLine());
 
-                    /*  greases the wheels */
-
                     Thread.yield();
 
                 }
@@ -291,13 +289,9 @@ public class JettyThread extends TickThread {
 
                     getLog().info(sce.nextLine());
 
-                     /*  greases the wheels */
-
                     Thread.yield();
 
                 }
-
-                 /*  greases the wheels */
 
                 Thread.yield();
 
