@@ -12,7 +12,6 @@ import java.util.Scanner;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
 
-
 /*
 
    Copyright 2016 Eric Ponthiaux -/- ponthiaux.eric@gmail.com
