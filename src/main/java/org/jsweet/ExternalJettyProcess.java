@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 
-
 /*
 
    Copyright 2016 Eric Ponthiaux -/- ponthiaux.eric@gmail.com
@@ -61,13 +60,13 @@ public class ExternalJettyProcess {
 
         }
 
-        System.out.println("- Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
+        System.out.println("Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
         webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
         try {
 
-            System.out.println("- Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+            System.out.println("Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
             Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
@@ -113,7 +112,7 @@ public class ExternalJettyProcess {
 
         webAppContext.setClassLoader(webAppClassLoader);
 
-        System.out.println("- Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
+        System.out.println("Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
 
         WebAppContext javaSourcesContext = new WebAppContext();
 
@@ -143,7 +142,7 @@ public class ExternalJettyProcess {
 
             server.start();
 
-            System.out.println("- Jetty is listening on port " + SERVER_PORT);
+            System.out.println("Jetty is listening on port " + SERVER_PORT);
 
             server.join();
 

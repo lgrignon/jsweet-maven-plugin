@@ -3,7 +3,6 @@ package org.jsweet;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.artifact.Artifact;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.eclipse.jetty.server.Server;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Scanner;
 
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
+
 
 /*
 
@@ -51,7 +51,7 @@ public class JettyThread extends TickThread {
 
     private File prepareJettyInstall(List<Artifact> pluginDependencies) throws IOException {
 
-        getLog().info("- validating jetty install ");
+        getLog().info("Validating jetty install ");
 
         File baseInstallDirectory = new File(getMojo().getMavenProject().getBuild().getDirectory() + "/.jetty/");
 
@@ -59,7 +59,7 @@ public class JettyThread extends TickThread {
 
             baseInstallDirectory.mkdir();
 
-            getLog().debug("- create " + baseInstallDirectory.getCanonicalPath());
+            getLog().debug("Create " + baseInstallDirectory.getCanonicalPath());
 
         }
 
@@ -79,7 +79,7 @@ public class JettyThread extends TickThread {
 
             if (!destinationFile.exists()) {
 
-                getLog().debug("- copy " + targetFile.getName() + " to " + destinationFile.getCanonicalPath());
+                getLog().debug("Copy " + targetFile.getName() + " to " + destinationFile.getCanonicalPath());
 
                 FileUtils.copyFile(
                         targetFile,
@@ -90,7 +90,7 @@ public class JettyThread extends TickThread {
 
         }
 
-        getLog().info("- Jetty install validated");
+        getLog().info("Jetty install validated");
 
         return baseInstallDirectory;
 
@@ -99,7 +99,7 @@ public class JettyThread extends TickThread {
     @Override
     public void onRun() {
 
-        getLog().info("- Starting jetty ... ");
+        getLog().info("Starting jetty ... ");
 
         List<Artifact> pluginDependencies = getMojo().getPluginDescriptor().getArtifacts();
 
@@ -135,13 +135,13 @@ public class JettyThread extends TickThread {
 
         /* add webapp dependencies */
 
-        getLog().debug("- Building webapp dependencies");
+        getLog().debug("Building webapp dependencies");
 
         processBuilder.environment().put("WEBAPP_DEPENDENCIES", buildDependenciesClassPath(webAppDependencies));
 
         /* */
 
-        getLog().debug("- building webapp resource base");
+        getLog().debug("Building webapp resource base");
 
         StringBuilder stringBuilder = new StringBuilder();
 
@@ -151,13 +151,13 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("src/main/webapp");
 
-        getLog().debug("- webapp resource base [" + stringBuilder.toString() + "]");
+        getLog().debug("Webapp resource base [" + stringBuilder.toString() + "]");
 
         processBuilder.environment().put("RESOURCE_BASE", stringBuilder.toString());
 
         /* */
 
-        getLog().debug("- building webapp server classes base");
+        getLog().debug("Building webapp server classes base");
 
         stringBuilder.delete(0, stringBuilder.length());
 
@@ -169,13 +169,13 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("/WEB-INF/classes");
 
-        getLog().debug("- webapp server classes base [" + stringBuilder.toString() + "]");
+        getLog().debug("Webapp server classes base [" + stringBuilder.toString() + "]");
 
         processBuilder.environment().put("SERVER_CLASSES", stringBuilder.toString());
 
         /* to resolve source maps */
 
-        getLog().info("- building source maps resolver");
+        getLog().info("Building source maps resolver");
 
         stringBuilder.delete(0, stringBuilder.length());
 
@@ -185,13 +185,13 @@ public class JettyThread extends TickThread {
 
         stringBuilder.append("src/main/java");
 
-        getLog().debug("- source maps resolver [" + stringBuilder.toString() + "]");
+        getLog().debug("Source maps resolver [" + stringBuilder.toString() + "]");
 
         processBuilder.environment().put("ADDITIONAL_RESOURCE_BASE", stringBuilder.toString());
 
         try {
 
-            getLog().debug("- calling jetty");
+            getLog().debug("Calling jetty");
 
             currentJettyProcess = processBuilder.start();
 
@@ -336,11 +336,11 @@ public class JettyThread extends TickThread {
     @Override
     public void execute() {
 
-        getLog().info("- Stopping jetty");
+        getLog().info("Stopping jetty");
 
         currentJettyProcess.destroy();
 
-        getLog().info("- Jetty stopped");
+        getLog().info("Jetty stopped");
 
         try {
 
@@ -354,7 +354,7 @@ public class JettyThread extends TickThread {
 
         try {
 
-            getLog().info("- Starting jetty");
+            getLog().info("Starting jetty");
 
             currentJettyProcess = processBuilder.start();
 

@@ -1,7 +1,11 @@
 package org.jsweet;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.jsweet.transpiler.JSweetTranspiler;
+
+import java.io.File;
+import java.io.IOException;
 
 /*
 
@@ -28,7 +32,7 @@ public class TranspilerThread extends TickThread {
 
     private JSweetTranspiler transpiler;
 
-    public TranspilerThread(AbstractJSweetMojo mojo , JSweetTranspiler transpiler ) {
+    public TranspilerThread(AbstractJSweetMojo mojo, JSweetTranspiler transpiler) {
 
         super(mojo);
 
@@ -54,6 +58,18 @@ public class TranspilerThread extends TickThread {
     }
 
     public void execute() {
+
+        try {
+
+            getLog().info("Cleaning jsweet temp directory");
+
+            FileUtils.deleteDirectory(new File(getMojo().getMavenProject().getBasedir() + "/.jsweet"));
+
+        } catch (IOException ioException) {
+
+            getLog().error("execute", ioException);
+
+        }
 
         try {
 
