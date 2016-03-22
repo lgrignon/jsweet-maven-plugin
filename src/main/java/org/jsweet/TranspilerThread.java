@@ -63,7 +63,7 @@ public class TranspilerThread extends TickThread {
 
             getLog().info("Cleaning jsweet temp directory");
 
-            FileUtils.deleteDirectory(new File(getMojo().getMavenProject().getBasedir() + "/.jsweet"));
+            FileUtils.deleteDirectory(new File(getMojo().getMavenProject().getBasedir() + "/" +JSweetTranspiler.TMP_WORKING_DIR_NAME);
 
         } catch (IOException ioException) {
 
