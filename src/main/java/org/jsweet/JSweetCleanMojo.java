@@ -15,16 +15,16 @@
  */
 package org.jsweet;
 
-import static org.jsweet.Util.getTranspilerWorkingDirectory;
-
-import java.io.File;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.project.MavenProject;
+
+import java.io.File;
+
+import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 /**
  * Maven mojo to clean JSweet working directory
@@ -35,7 +35,11 @@ import org.apache.maven.project.MavenProject;
 public class JSweetCleanMojo extends AbstractJSweetMojo {
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
+
 		getLog().info("cleaning jsweet working directory");
+
+		setOutDir(getOutDir()+"/" + getRelativeOutDir());
+
 		try {
 			MavenProject project = getMavenProject();
 

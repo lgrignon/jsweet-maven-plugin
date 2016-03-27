@@ -13,9 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/**
- * This package contains the JSweet Maven plugin.
- * 
- * @author Louis Grignon
- */
 package org.jsweet;
+
+import org.apache.maven.project.MavenProject;
+import org.jsweet.transpiler.JSweetTranspiler;
+
+import java.io.File;
+
+/**
+ * General utilities without a long life expectation
+ * @author Louis Grignon
+ *
+ */
+public class Util {
+	public static File getTranspilerWorkingDirectory(MavenProject project) {
+		return new File(JSweetTranspiler.TMP_WORKING_DIR_NAME);
+	}
+}

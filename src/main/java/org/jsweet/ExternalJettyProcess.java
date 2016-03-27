@@ -1,0 +1,170 @@
+package org.jsweet;
+
+import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.util.resource.Resource;
+import org.eclipse.jetty.webapp.WebAppClassLoader;
+import org.eclipse.jetty.webapp.WebAppContext;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+
+/*
+
+   Copyright 2016 Eric Ponthiaux -/- ponthiaux.eric@gmail.com
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+*/
+
+
+/* @author EPOTH -/- ponthiaux.e@sfeir.com -/- ponthiaux.eric@gmail.com */
+
+public class ExternalJettyProcess {
+
+    private static final int SERVER_PORT = 8080;
+
+    public static void main(String args[]) {
+
+        System.setProperty("org.eclipse.jetty.io.LEVEL", "DEBUG");
+
+        Server server = new Server(SERVER_PORT);
+
+        WebAppContext webAppContext = new WebAppContext();
+
+        webAppContext.setContextPath("/");
+
+        WebAppClassLoader webAppClassLoader = null;
+
+        try {
+
+            webAppClassLoader = new WebAppClassLoader(webAppContext);
+
+        } catch (IOException ioException) {
+
+            info(ioException);
+
+            return;
+
+        }
+
+        info("Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
+
+        webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
+
+        try {
+
+            info("Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+
+            Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
+
+            webAppClassLoader.addClassPath(classesResource);
+
+        } catch (MalformedURLException malformedURLException) {
+
+            info(malformedURLException);
+
+            return;
+
+        } catch (IOException ioException) {
+
+            info(ioException);
+
+            return;
+
+        }
+
+        String dependencies[] = System.getenv("WEBAPP_DEPENDENCIES").split(";");
+
+        for (String dependency : dependencies) {
+
+            try {
+
+                Resource lib = Resource.newResource(dependency);
+
+                webAppClassLoader.addClassPath(lib);
+
+            } catch (MalformedURLException malFormedURLException) {
+
+                info(malFormedURLException);
+
+            } catch (IOException ioException) {
+
+                info(ioException);
+
+                return;
+
+            }
+
+        }
+
+        webAppContext.setClassLoader(webAppClassLoader);
+
+        info("Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
+
+        WebAppContext javaSourcesContext = new WebAppContext();
+
+        javaSourcesContext.setContextPath("/java");
+
+        javaSourcesContext.setResourceBase(System.getenv("ADDITIONAL_RESOURCE_BASE"));
+
+        /* */
+
+        ArrayList<Handler> handlers = new ArrayList<>();
+
+        /* */
+
+        handlers.add(webAppContext);
+
+        handlers.add(javaSourcesContext);
+
+        /* */
+
+        ContextHandlerCollection contextHandlerCollection = new ContextHandlerCollection();
+
+        contextHandlerCollection.setHandlers(handlers.toArray(new Handler[handlers.size()]));
+
+        server.setHandler(contextHandlerCollection);
+
+        try {
+
+            server.start();
+
+            info("Jetty is listening on port " + SERVER_PORT);
+
+            server.join();
+
+        } catch (Exception exception) {
+
+            info(exception);
+
+            return;
+
+        }
+
+    }
+
+
+    private static void info(String message) {
+
+        System.out.println("[INFO] " + message);
+    }
+
+    private static void info(Exception message) {
+
+        System.out.println("[INFO] " + message.getMessage());
+    }
+
+}
