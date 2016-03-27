@@ -1,11 +1,7 @@
 package org.jsweet;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.jsweet.transpiler.JSweetTranspiler;
-
-import java.io.File;
-import java.io.IOException;
 
 /*
 

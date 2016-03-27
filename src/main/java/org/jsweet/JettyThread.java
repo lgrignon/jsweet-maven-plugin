@@ -40,8 +40,6 @@ public class JettyThread extends TickThread {
 
     private Process currentJettyProcess;
 
-    private IOThread processIOThread;
-
     public JettyThread(AbstractJSweetMojo mojo) {
 
         super(mojo);
@@ -192,9 +190,7 @@ public class JettyThread extends TickThread {
 
             getLog().debug("Calling jetty");
 
-            currentJettyProcess = processBuilder.start();
-
-            inheritIO(currentJettyProcess.getInputStream(), currentJettyProcess.getErrorStream());
+            currentJettyProcess = processBuilder.inheritIO().start();
 
         } catch (IOException ioException) {
 
@@ -225,78 +221,6 @@ public class JettyThread extends TickThread {
         }
 
         return "*";
-
-    }
-
-    private void inheritIO(final InputStream inputStream, final InputStream errorStream) {
-
-        if (processIOThread != null && processIOThread.isAlive()) {
-
-            processIOThread.kill();
-
-            while (processIOThread.isAlive()) {
-
-                Thread.yield();
-            }
-
-        }
-
-        processIOThread = new IOThread(inputStream, errorStream);
-
-        processIOThread.start();
-
-    }
-
-    private class IOThread extends Thread {
-
-        private InputStream stream;
-
-        private InputStream errorStream;
-
-        private boolean run = true;
-
-        public IOThread(InputStream stream, InputStream errorStream) {
-
-            this.stream = stream;
-
-            this.errorStream = errorStream;
-        }
-
-        public void kill() {
-
-            this.run = false;
-
-        }
-
-        public void run() {
-
-            while (this.run) {
-
-                Scanner scs = new Scanner(this.stream);
-
-                while (scs.hasNextLine()) {
-
-                    getLog().info(scs.nextLine());
-
-                    Thread.yield();
-
-                }
-
-                Scanner sce = new Scanner(this.errorStream);
-
-                while (sce.hasNextLine()) {
-
-                    getLog().info(sce.nextLine());
-
-                    Thread.yield();
-
-                }
-
-                Thread.yield();
-
-            }
-
-        }
 
     }
 
@@ -349,9 +273,7 @@ public class JettyThread extends TickThread {
 
             getLog().info("Starting jetty");
 
-            currentJettyProcess = processBuilder.start();
-
-            inheritIO(currentJettyProcess.getInputStream(), currentJettyProcess.getErrorStream());
+            currentJettyProcess = processBuilder.inheritIO().start();
 
         } catch (IOException ioException) {
 

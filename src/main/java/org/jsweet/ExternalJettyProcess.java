@@ -36,7 +36,7 @@ public class ExternalJettyProcess {
 
     private static final int SERVER_PORT = 8080;
 
-    public static void main( String args[] ) {
+    public static void main(String args[]) {
 
         System.setProperty("org.eclipse.jetty.io.LEVEL", "DEBUG");
 
@@ -54,19 +54,19 @@ public class ExternalJettyProcess {
 
         } catch (IOException ioException) {
 
-            System.out.println(ioException);
+            info(ioException);
 
             return;
 
         }
 
-        System.out.println("Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
+        info("Jetty webapp resource base [" + System.getenv("RESOURCE_BASE") + "]");
 
         webAppContext.setResourceBase(System.getenv("RESOURCE_BASE"));
 
         try {
 
-            System.out.println("Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
+            info("Jetty webapp classes directory [" + System.getenv("SERVER_CLASSES") + "]");
 
             Resource classesResource = Resource.newResource(System.getenv("SERVER_CLASSES"));
 
@@ -74,13 +74,13 @@ public class ExternalJettyProcess {
 
         } catch (MalformedURLException malformedURLException) {
 
-            System.err.println(malformedURLException);
+            info(malformedURLException);
 
             return;
 
         } catch (IOException ioException) {
 
-            System.err.println(ioException);
+            info(ioException);
 
             return;
 
@@ -98,11 +98,11 @@ public class ExternalJettyProcess {
 
             } catch (MalformedURLException malFormedURLException) {
 
-                System.out.println(malFormedURLException);
+                info(malFormedURLException);
 
             } catch (IOException ioException) {
 
-                System.out.println(ioException);
+                info(ioException);
 
                 return;
 
@@ -112,7 +112,7 @@ public class ExternalJettyProcess {
 
         webAppContext.setClassLoader(webAppClassLoader);
 
-        System.out.println("Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
+        info("Jetty source maps resource base [" + System.getenv("ADDITIONAL_RESOURCE_BASE") + "]");
 
         WebAppContext javaSourcesContext = new WebAppContext();
 
@@ -142,18 +142,29 @@ public class ExternalJettyProcess {
 
             server.start();
 
-            System.out.println("Jetty is listening on port " + SERVER_PORT);
+            info("Jetty is listening on port " + SERVER_PORT);
 
             server.join();
 
         } catch (Exception exception) {
 
-            System.out.println(exception);
+            info(exception);
 
             return;
 
         }
 
+    }
+
+
+    private static void info(String message) {
+
+        System.out.println("[INFO] " + message);
+    }
+
+    private static void info(Exception message) {
+
+        System.out.println("[INFO] " + message.getMessage());
     }
 
 }
