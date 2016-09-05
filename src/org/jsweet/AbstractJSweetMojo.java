@@ -62,6 +62,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean declaration;
 
+	@Parameter(defaultValue = "tsOnly", required = false, readonly = true)
+	protected boolean tsOnly;
+
 	@Parameter(readonly = true)
 	protected String dtsOut;
 
@@ -170,6 +173,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				logInfo("bundlesDirectory: " + bundlesDirectory);
 			}
 			logInfo("tsOut: " + tsOutputDir);
+			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
 			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("candiesJsOutDir: " + candiesJsOut);
@@ -198,6 +202,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setIgnoreAssertions(!enableAssertions);
 			transpiler.setGenerateDeclarations(declaration);
 			transpiler.setDeclarationsOutputDir(declarationOutDir);
+			transpiler.setGenerateJsFiles(!tsOnly);
 
 			return transpiler;
 
@@ -286,33 +291,32 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
 					new ConsoleTranspilationHandler());
 			try {
-	
-	
+
 				SourceFile[] sources = collectSourceFiles(project);
-	
+
 				transpiler.transpile(transpilationHandler, sources);
-	
+
 			} catch (NoClassDefFoundError error) {
 				transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
 						JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
 			}
-	
+
 			int errorCount = transpilationHandler.getErrorCount();
-	
+
 			if (errorCount > 0) {
 				throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
 						+ transpilationHandler.getWarningCount() + " warning(s)");
 			} else {
-	
+
 				if (transpilationHandler.getWarningCount() > 0) {
 					getLog().info(
 							"transpilation completed with " + transpilationHandler.getWarningCount() + " warning(s)");
 				} else {
 					getLog().info("transpilation successfully completed with no errors and no warnings");
 				}
-	
+
 			}
-	
+
 		} catch (Exception e) {
 			getLog().error("transpilation failed", e);
 			throw new MojoExecutionException("transpilation failed", e);
