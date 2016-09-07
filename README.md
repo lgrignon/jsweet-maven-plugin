@@ -38,7 +38,7 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 <plugin>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
+	<version>1.2.0-SNAPSHOT</version>
 	<configuration>
 		<outDir>javascript</outDir>
 		<targetVersion>ES3</targetVersion>
@@ -63,6 +63,7 @@ targetVersion | enum | ES3, ES5, ES6 | ES3 | ``` <targetVersion>ES3</targetVersi
 module | enum | commonjs, amd, system, umd | none | ```<module>commonjs</module>```
 outDir | string | JS files output directory | .jsweet/js | ```<outDir>js</outDir>```
 tsOut | string | Temporary TypeScript output directory | .jsweet/ts | ```<tsOut>temp/ts</tsOut>```
+tsOnly | boolean | if true, JSweet will not generate any JavaScript | false | ```<tsOnly>true</tsOnly>```
 includes | string[] | Java source files to be included | N/A | ```<includes><include>**/*.java</include></includes>```
 excludes | string[] | Source files to be excluded | N/A | ```<excludes><exclude>**/lib/**</exclude></excludes>```
 bundle | boolean | Concats all JS file into one bundle | false |   ```<bundle>true</bundle>```
