@@ -77,6 +77,8 @@ jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven
 declaration | boolean | Generates TypeScript d.ts | false | ```<declaration>true</declaration>```
 dtsOut | string | TypeScript d.ts output directory when the declaration option is true | outDir | ```<dtsOut>typings</dtsOut>```
 candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<candiesJsOut>www/js/candies</candiesJsOut>```
+definitions | boolean | Generates only definitions from def.* packages in d.ts definition files, in the tsOut directory (do not confuse with the 'declaration' option) | false | ```<definitions>true</definition>```
+disableJavaAddons | boolean | Do not generate code that emulates some features for Java-specific behavior such as interface/class tracking and static initialization (for advanced users only) | false | ```<disableJavaAddons>true</disableJavaAddons>```
 
 Then, just run the maven command line as usual:
 
