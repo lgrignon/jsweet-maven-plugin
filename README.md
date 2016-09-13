@@ -63,20 +63,22 @@ targetVersion | enum | ES3, ES5, ES6 | ES3 | ``` <targetVersion>ES3</targetVersi
 module | enum | commonjs, amd, system, umd | none | ```<module>commonjs</module>```
 outDir | string | JS files output directory | .jsweet/js | ```<outDir>js</outDir>```
 tsOut | string | Temporary TypeScript output directory | .jsweet/ts | ```<tsOut>temp/ts</tsOut>```
-tsOnly | boolean | if true, JSweet will not generate any JavaScript | false | ```<tsOnly>true</tsOnly>```
+tsOnly | boolean | If true, JSweet will not generate any JavaScript | false | ```<tsOnly>true</tsOnly>```
 includes | string[] | Java source files to be included | N/A | ```<includes><include>**/*.java</include></includes>```
 excludes | string[] | Source files to be excluded | N/A | ```<excludes><exclude>**/lib/**</exclude></excludes>```
 bundle | boolean | Concats all JS file into one bundle | false |   ```<bundle>true</bundle>```
 bundlesDirectory | string | JS bundles output directory | N/A | ```<bundlesDirectory>js/dist</bundlesDirectory>```
 sourceMap | boolean | In-browser debug mode - true for java, typescript else | true | ```<sourceMap>true</sourceMap>```
 encoding | string | Java files encoding | UTF-8 | ```<encoding>ISO-8859-1</encoding>```
-noRootDirectories | boolean | output is relative to @jsweet.lang.Root package's directories | false | ```<noRootDirectories>true</noRootDirectories>```
-enableAssertions | boolean | assert are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```
+noRootDirectories | boolean | Output is relative to @jsweet.lang.Root package's directories | false | ```<noRootDirectories>true</noRootDirectories>```
+enableAssertions | boolean | Java assert statements are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```
 verbose | boolean | Verbose transpiler output | false | ```<verbose>true</verbose>```
 jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven with a JRE | ${java.home} | ```<jdkHome>/opt/jdk8</jdkHome>```
 declaration | boolean | Generates TypeScript d.ts | false | ```<declaration>true</declaration>```
 dtsOut | string | TypeScript d.ts output directory when the declaration option is true | outDir | ```<dtsOut>typings</dtsOut>```
 candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<candiesJsOut>www/js/candies</candiesJsOut>```
+definitions | boolean | Generates only definitions from def.* packages in d.ts definition files, in the tsOut directory (do not confuse with the 'declaration' option) | false | ```<definitions>true</definition>```
+disableJavaAddons | boolean | Disables Java-specific code generation behavior (for advanced users only) | false | ```<disableJavaAddons>true</disableJavaAddons>```
 
 Then, just run the maven command line as usual:
 

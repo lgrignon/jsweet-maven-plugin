@@ -74,6 +74,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean verbose;
 
+	@Parameter(defaultValue = "false", required = false, readonly = true)
+	protected boolean disableJavaAddons;
+
+	@Parameter(defaultValue = "false", required = false, readonly = true)
+	protected boolean definitions;
+
 	@Parameter(required = false, readonly = true)
 	protected String bundlesDirectory;
 
@@ -175,6 +181,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
+			logInfo("definitions: " + definitions);
+			logInfo("disableJavaAddons: " + disableJavaAddons);
 			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("candiesJsOutDir: " + candiesJsOut);
 			logInfo("ecmaTargetVersion: " + targetVersion);
@@ -202,6 +210,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setIgnoreAssertions(!enableAssertions);
 			transpiler.setGenerateDeclarations(declaration);
 			transpiler.setDeclarationsOutputDir(declarationOutDir);
+			transpiler.setGenerateDefinitions(definitions);
+			transpiler.setInterfaceTracking(!disableJavaAddons);
+			transpiler.setSupportGetClass(!disableJavaAddons);
+			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
 			transpiler.setGenerateJsFiles(!tsOnly);
 
 			return transpiler;
