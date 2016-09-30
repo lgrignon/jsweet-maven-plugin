@@ -261,10 +261,14 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		// add artifacts of declared dependencies
 		List<Artifact> directDependencies = new LinkedList<>();
 		for (Dependency dependency : dependencies) {
+			if (!dependency.getType().equals("jar")) {
+				getLog().warn("dependency type not-jar excluded from candies detection: " + dependency);
+				continue;
+			}
 			Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
 					dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-			logInfo("add direct candy dependency: " + dependency + "=" + mavenArtifact);
+			logInfo("candies detection: add project dependency " + dependency + " => " + mavenArtifact);
 
 			directDependencies.add(mavenArtifact);
 		}
