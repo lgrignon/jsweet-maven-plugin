@@ -1,5 +1,7 @@
 # JSweet maven plugin usage
 
+## Configuration / Installation ##
+
 Add the JSweet's plugin repositories to your project's pom.xml:
 ```xml
 <pluginRepositories>
@@ -80,11 +82,23 @@ candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<
 definitions | boolean | Generates only definitions from def.* packages in d.ts definition files, in the tsOut directory (do not confuse with the 'declaration' option) | false | ```<definitions>true</definition>```
 disableJavaAddons | boolean | Disables Java-specific code generation behavior (for advanced users only) | false | ```<disableJavaAddons>true</disableJavaAddons>```
 
+## Run JSweet transpiler! ##
+
 Then, just run the maven command line as usual:
 
 ```
 $ mvn generate-sources -P client
 ```
+
+## Hot transpilation ##
+
+JSweet maven plugin is now able to watch changes in your JSweet files and transpile them on the fly. Try it with 
+
+```
+mvn jsweet:watch
+```
+
+## Multiple transpilation configuration ##
 
 You can use the plugin with profiles in order to transpile differently several parts of
 your application. For instance, a node server and a HTML5 client app:
@@ -157,6 +171,8 @@ your application. For instance, a node server and a HTML5 client app:
 </profiles>
 ```
 
-
-
+then run the desired profile:
+```
+$ mvn generate-sources -P client
+```
 
