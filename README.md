@@ -3,12 +3,12 @@
 Unleash the power of JSweet into your maven project
 
 ## Table of Contents
-1. [Configuration / Installation](#configuration)
+1. [Basic Configuration](#basic-configuration)
 2. [Run JSweet](#run-jsweet)
 3. [Hot transpilation](#hot-transpilation)
-4. [Advanced configuration](#advancer-configuration)
+4. [Advanced configuration](#advanced-configuration)
 
-## Configuration / Installation ##
+## Basic Configuration ##
 
 Add the JSweet's plugin repositories to your project's pom.xml:
 ```xml
