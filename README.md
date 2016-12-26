@@ -184,11 +184,3 @@ then run the desired profile:
 ```
 $ mvn generate-sources -P client
 ```
-
-## Candy tools ##
-
-generates base candy code based on the TypeScript definition file
-```
-$ mvn jsweet:candy-generate-sources -Dcandy.scaffold.candyName=jquery -Dcandy.scaffold.candyVersion=1.10 -Dcandy.scaffold.outDir=/tmp/jquery-candy-src -Dcandy.scaffold.tsFiles=typings/globals/jquery/index.d.ts -Dcandy.scaffold.tsDependencyFiles=typings/lib.core/lib.core.d.ts,typings/lib.core/lib.core.ext.d.ts,typings/lib.core/lib.dom.d.ts
-```
-
