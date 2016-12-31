@@ -81,7 +81,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected boolean disableJavaAddons;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean definitions;
+	protected boolean ignoreDefinitions;
 
 	@Parameter(required = false, readonly = true)
 	protected String bundlesDirectory;
@@ -184,7 +184,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
-			logInfo("definitions: " + definitions);
+			logInfo("ignoreDefinitions: " + ignoreDefinitions);
 			logInfo("disableJavaAddons: " + disableJavaAddons);
 			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("candiesJsOutDir: " + candiesJsOut);
@@ -215,7 +215,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setIgnoreAssertions(!enableAssertions);
 			transpiler.setGenerateDeclarations(declaration);
 			transpiler.setDeclarationsOutputDir(declarationOutDir);
-			transpiler.setGenerateDefinitions(definitions);
+			transpiler.setGenerateDefinitions(!ignoreDefinitions);
 			transpiler.setInterfaceTracking(!disableJavaAddons);
 			transpiler.setSupportGetClass(!disableJavaAddons);
 			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
