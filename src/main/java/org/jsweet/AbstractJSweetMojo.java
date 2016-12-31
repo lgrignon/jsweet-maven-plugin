@@ -71,6 +71,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean sourceMap;
 
+	@Parameter(required = false, readonly = true)
+	protected String sourceRoot;
+
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean verbose;
 
@@ -78,7 +81,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected boolean disableJavaAddons;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean definitions;
+	protected boolean ignoreDefinitions;
 
 	@Parameter(required = false, readonly = true)
 	protected String bundlesDirectory;
@@ -181,13 +184,14 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
-			logInfo("definitions: " + definitions);
+			logInfo("ignoreDefinitions: " + ignoreDefinitions);
 			logInfo("disableJavaAddons: " + disableJavaAddons);
 			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("candiesJsOutDir: " + candiesJsOut);
 			logInfo("ecmaTargetVersion: " + targetVersion);
 			logInfo("moduleKind: " + module);
 			logInfo("sourceMap: " + sourceMap);
+			logInfo("sourceRoot: " + sourceRoot);
 			logInfo("verbose: " + verbose);
 			logInfo("jdkHome: " + jdkHome);
 
@@ -205,12 +209,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setBundle(bundle);
 			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
 			transpiler.setPreserveSourceLineNumbers(sourceMap);
+			transpiler.setSourceRoot(getSourceRoot());
 			transpiler.setEncoding(encoding);
 			transpiler.setNoRootDirectories(noRootDirectories);
 			transpiler.setIgnoreAssertions(!enableAssertions);
 			transpiler.setGenerateDeclarations(declaration);
 			transpiler.setDeclarationsOutputDir(declarationOutDir);
-			transpiler.setGenerateDefinitions(definitions);
+			transpiler.setGenerateDefinitions(!ignoreDefinitions);
 			transpiler.setInterfaceTracking(!disableJavaAddons);
 			transpiler.setSupportGetClass(!disableJavaAddons);
 			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
@@ -230,6 +235,14 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			declarationOutDir = new File(this.dtsOut).getCanonicalFile();
 		}
 		return declarationOutDir;
+	}
+
+	protected File getSourceRoot() throws IOException {
+		File sourceRoot = null;
+		if (isNotBlank(this.sourceRoot)) {
+			sourceRoot = new File(this.sourceRoot);
+		}
+		return sourceRoot;
 	}
 
 	protected File getJsOutDir() throws IOException {
