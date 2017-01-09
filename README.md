@@ -7,7 +7,6 @@ Unleash the power of JSweet into your maven project
 2. [Run JSweet](#run-jsweet)
 3. [Hot transpilation](#hot-transpilation)
 4. [Advanced configuration](#advanced-configuration)
-5. [Candy tools](#candy-tools)
 
 ## Basic Configuration ##
 
