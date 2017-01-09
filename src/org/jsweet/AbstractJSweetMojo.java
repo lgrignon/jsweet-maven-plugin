@@ -113,6 +113,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true)
 	protected List<ArtifactRepository> remoteRepositories;
 
+	@Parameter(defaultValue = "false", required = false, readonly = true)
+	protected boolean removeJavaDependencies;
+
 	@Component
 	protected ArtifactFactory artifactFactory;
 
@@ -194,6 +197,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("sourceRoot: " + sourceRoot);
 			logInfo("verbose: " + verbose);
 			logInfo("jdkHome: " + jdkHome);
+			logInfo("removeJavaDependencies: " + removeJavaDependencies);
 
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
@@ -220,6 +224,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setSupportGetClass(!disableJavaAddons);
 			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
 			transpiler.setGenerateJsFiles(!tsOnly);
+			transpiler.setUseJavaApis(!removeJavaDependencies);
 
 			return transpiler;
 

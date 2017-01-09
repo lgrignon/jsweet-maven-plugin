@@ -90,6 +90,7 @@ dtsOut | string | TypeScript d.ts output directory when the declaration option i
 candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<candiesJsOut>www/js/candies</candiesJsOut>```
 definitions | boolean | Generates only definitions from def.* packages in d.ts definition files, in the tsOut directory (do not confuse with the 'declaration' option) | false | ```<definitions>true</definition>```
 disableJavaAddons | boolean | Disables Java-specific code generation behavior (for advanced users only) | false | ```<disableJavaAddons>true</disableJavaAddons>```
+removeJavaDependencies | boolean | Best effort to remove all dependencies to Java APIs (use JavaScript APIs instead) | false | ```<removeJavaDependencies>true</removeJavaDependencies>```
 
 ## Run JSweet ##
 
