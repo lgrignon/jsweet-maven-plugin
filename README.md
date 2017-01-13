@@ -74,11 +74,11 @@ module | enum | The module kind (none, commonjs, amd, system or umd). | none
 outDir | string | JS files output directory | .jsweet/js
 tsOut | string | Specify where to place generated TypeScript files. | .jsweet/ts
 tsOnly | boolean | Do not compile the TypeScript output (let an external TypeScript compiler do so). | false
-includes | string[] | Java source files to be included | N/A
-excludes | string[] | Source files to be excluded | N/A
+includes | string[] | Java source files to be included | -
+excludes | string[] | Source files to be excluded | -
 bundle | boolean | Bundle up all the generated code in a single file, which can be used in the browser. The bundle files are called 'bundle.ts', 'bundle.d.ts', or 'bundle.js' depending on the kind of generated code. NOTE: bundles are not compatible with any module kind other than 'none'. | false
 sourceMap | boolean | Generate source map files for the Java files, so that it is possible to debug Java files directly with a debugger that supports source maps (most JavaScript debuggers). | true
-sourceRoot | string | Specify the location where debugger should locate Java files instead of source locations. Use this flag if the sources will be located at run-time in a different location than that at design-time. The location specified will be embedded in the sourceMap to direct the debugger where the source files will be located. | N/A
+sourceRoot | string | Specify the location where debugger should locate Java files instead of source locations. Use this flag if the sources will be located at run-time in a different location than that at design-time. The location specified will be embedded in the sourceMap to direct the debugger where the source files will be located. | -
 encoding | string | Force the Java compiler to use a specific encoding (UTF-8, UTF-16, ...). | UTF-8
 noRootDirectories | boolean | Skip the root directories (i.e. packages annotated with @jsweet.lang.Root) so that the generated file hierarchy starts at the root directories rather than including the entire directory structure. | false
 enableAssertions | boolean | Java 'assert' statements are transpiled as runtime JavaScript checks. | false
@@ -86,10 +86,10 @@ verbose | boolean | Turn on all levels of logging. | false
 jdkHome | string | Set the JDK home directory to be used to find the Java compiler. If not set, the transpiler will try to use the JAVA_HOME environment variable. Note that the expected JDK version is greater or equals to version 8. | ${java.home}
 declaration | boolean | Generate the d.ts files along with the js files, so that other programs can use them to compile. | false
 dtsOut | string | Specify where to place generated d.ts files when the declaration option is set (by default, d.ts files are generated in the JavaScript output directory - next to the corresponding js files). | outDir
-candiesJsOut | string | Specify where to place extracted JavaScript files from candies. |
+candiesJsOut | string | Specify where to place extracted JavaScript files from candies. | -
 ingoreDefinitions | boolean | Ignore definitions from def.* packages, so that they are not generated in d.ts definition files. If this option is not set, the transpiler generates d.ts definition files in the directory given by the tsout option. | false
 disableJavaAddons | boolean | Disable runtime addons (instanceof, overloading, class name access, static initialization [...] will not be fully supported). | false
-factoryClassName | string | Use the given factory to tune the default transpiler behavior. | 
+factoryClassName | string | Use the given factory to tune the default transpiler behavior. | -
 
 ## Run JSweet ##
 
