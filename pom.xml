@@ -128,6 +128,14 @@
 			<version>3.4</version>
 			<scope>provided</scope>
 		</dependency>
+		<!-- Compile-time only dependency (JSweet looks up installed JDK at runtime 
+			to conform to legal obligations) -->
+		<dependency>
+			<groupId>com.sun</groupId>
+			<artifactId>tools</artifactId>
+			<version>8</version>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 
 	<repositories>
@@ -138,6 +146,11 @@
 		<repository>
 			<id>jsweet-snapshot</id>
 			<url>http://repository.jsweet.org/artifactory/libs-snapshot-local</url>
+		</repository>
+		<repository>
+			<id>jsweet-external</id>
+			<name>libs-release</name>
+			<url>http://repository.jsweet.org/artifactory/ext-release-local</url>
 		</repository>
 	</repositories>
 
