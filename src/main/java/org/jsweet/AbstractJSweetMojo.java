@@ -2,6 +2,7 @@ package org.jsweet;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
+import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +13,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
@@ -33,14 +33,13 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.jsweet.transpiler.EcmaScriptComplianceLevel;
+import org.jsweet.transpiler.JSweetFactory;
 import org.jsweet.transpiler.JSweetProblem;
 import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.SourceFile;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
-
-import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 public abstract class AbstractJSweetMojo extends AbstractMojo {
 
@@ -84,9 +83,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected boolean ignoreDefinitions;
 
 	@Parameter(required = false, readonly = true)
-	protected String bundlesDirectory;
-
-	@Parameter(required = false, readonly = true)
 	protected File candiesJsOut;
 
 	@Parameter
@@ -112,6 +108,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "${project.remoteArtifactRepositories}", required = true, readonly = true)
 	protected List<ArtifactRepository> remoteRepositories;
+
+	@Parameter(required = false)
+	protected String factoryClassName;
 
 	@Component
 	protected ArtifactFactory artifactFactory;
@@ -158,7 +157,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return sources.toArray(new SourceFile[0]);
 	}
 
-	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
+	protected JSweetTranspiler<?> createJSweetTranspiler(MavenProject project)
+			throws MojoExecutionException {
 
 		try {
 
@@ -178,9 +178,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 			logInfo("jsOut: " + jsOutDir);
 			logInfo("bundle: " + bundle);
-			if (bundlesDirectory != null) {
-				logInfo("bundlesDirectory: " + bundlesDirectory);
-			}
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
@@ -194,6 +191,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("sourceRoot: " + sourceRoot);
 			logInfo("verbose: " + verbose);
 			logInfo("jdkHome: " + jdkHome);
+			logInfo("factoryClassName: " + factoryClassName);
 
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
@@ -201,13 +199,33 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			JSweetTranspiler transpiler = new JSweetTranspiler(getTranspilerWorkingDirectory(project), tsOutputDir,
-					jsOutDir, candiesJsOut, classPath);
+			JSweetFactory<?> factory = null;
+
+			if (factoryClassName != null) {
+				try {
+					factory = (JSweetFactory<?>) Thread.currentThread().getContextClassLoader()
+							.loadClass(factoryClassName).newInstance();
+				} catch (Exception e) {
+					try {
+						// try forName just in case
+						factory = (JSweetFactory<?>) Class.forName(factoryClassName).newInstance();
+					} catch (Exception e2) {
+						logInfo("cannot find or instantiate factory class: " + factoryClassName + " - " + e.getMessage()
+								+ ", " + e2.getMessage());
+					}
+				}
+			}
+
+			if (factory == null) {
+				factory = new JSweetFactory<>();
+			}
+
+			JSweetTranspiler<?> transpiler = new JSweetTranspiler<>(factory, getTranspilerWorkingDirectory(project),
+					tsOutputDir, jsOutDir, candiesJsOut, classPath);
 			transpiler.setTscWatchMode(false);
 			transpiler.setEcmaTargetVersion(targetVersion);
 			transpiler.setModuleKind(module);
 			transpiler.setBundle(bundle);
-			transpiler.setBundlesDirectory(StringUtils.isBlank(bundlesDirectory) ? null : new File(bundlesDirectory));
 			transpiler.setPreserveSourceLineNumbers(sourceMap);
 			transpiler.setSourceRoot(getSourceRoot());
 			transpiler.setEncoding(encoding);

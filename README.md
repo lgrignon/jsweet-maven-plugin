@@ -7,7 +7,6 @@ Unleash the power of JSweet into your maven project
 2. [Run JSweet](#run-jsweet)
 3. [Hot transpilation](#hot-transpilation)
 4. [Advanced configuration](#advanced-configuration)
-5. [Candy tools](#candy-tools)
 
 ## Basic Configuration ##
 
@@ -68,29 +67,29 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 
 The configuration options of the plugin:
 
-Name     |    Type       | Values | Default | Example
--------- | ------------- | ------ | ------- | -------
-targetVersion | enum | ES3, ES5, ES6 | ES3 | ``` <targetVersion>ES3</targetVersion> ```
-module | enum | commonjs, amd, system, umd | none | ```<module>commonjs</module>```
-outDir | string | JS files output directory | .jsweet/js | ```<outDir>js</outDir>```
-tsOut | string | Temporary TypeScript output directory | .jsweet/ts | ```<tsOut>temp/ts</tsOut>```
-tsOnly | boolean | If true, JSweet will not generate any JavaScript | false | ```<tsOnly>true</tsOnly>```
-includes | string[] | Java source files to be included | N/A | ```<includes><include>**/*.java</include></includes>```
-excludes | string[] | Source files to be excluded | N/A | ```<excludes><exclude>**/lib/**</exclude></excludes>```
-bundle | boolean | Concats all JS file into one bundle | false |   ```<bundle>true</bundle>```
-bundlesDirectory | string | JS bundles output directory | N/A | ```<bundlesDirectory>js/dist</bundlesDirectory>```
-sourceMap | boolean | In-browser debug mode - true for java, typescript else | true | ```<sourceMap>true</sourceMap>```
-sourceRoot | string | The location where debugger should locate Java files instead of source locations | N/A | ```<sourceRoot>src</sourceRoot>```
-encoding | string | Java files encoding | UTF-8 | ```<encoding>ISO-8859-1</encoding>```
-noRootDirectories | boolean | Output is relative to @jsweet.lang.Root package's directories | false | ```<noRootDirectories>true</noRootDirectories>```
-enableAssertions | boolean | Java assert statements are transpiled as JS check | false | ```<enableAssertions>true</enableAssertions>```
-verbose | boolean | Verbose transpiler output | false | ```<verbose>true</verbose>```
-jdkHome | string | Alternative JDK >= 8 directory, for instance if running Maven with a JRE | ${java.home} | ```<jdkHome>/opt/jdk8</jdkHome>```
-declaration | boolean | Generates TypeScript d.ts | false | ```<declaration>true</declaration>```
-dtsOut | string | TypeScript d.ts output directory when the declaration option is true | outDir | ```<dtsOut>typings</dtsOut>```
-candiesJsOut | string | Directory where to extract candies' Javascript |  | ```<candiesJsOut>www/js/candies</candiesJsOut>```
-definitions | boolean | Generates only definitions from def.* packages in d.ts definition files, in the tsOut directory (do not confuse with the 'declaration' option) | false | ```<definitions>true</definition>```
-disableJavaAddons | boolean | Disables Java-specific code generation behavior (for advanced users only) | false | ```<disableJavaAddons>true</disableJavaAddons>```
+Name     |    Type       | Values | Default
+-------- | ------------- | ------ | -------
+targetVersion | enum | ES3, ES5, ES6 | ES3
+module | enum | The module kind (none, commonjs, amd, system or umd). | none
+outDir | string | JS files output directory | .jsweet/js
+tsOut | string | Specify where to place generated TypeScript files. | .jsweet/ts
+tsOnly | boolean | Do not compile the TypeScript output (let an external TypeScript compiler do so). | false
+includes | string[] | Java source files to be included | -
+excludes | string[] | Source files to be excluded | -
+bundle | boolean | Bundle up all the generated code in a single file, which can be used in the browser. The bundle files are called 'bundle.ts', 'bundle.d.ts', or 'bundle.js' depending on the kind of generated code. NOTE: bundles are not compatible with any module kind other than 'none'. | false
+sourceMap | boolean | Generate source map files for the Java files, so that it is possible to debug Java files directly with a debugger that supports source maps (most JavaScript debuggers). | true
+sourceRoot | string | Specify the location where debugger should locate Java files instead of source locations. Use this flag if the sources will be located at run-time in a different location than that at design-time. The location specified will be embedded in the sourceMap to direct the debugger where the source files will be located. | -
+encoding | string | Force the Java compiler to use a specific encoding (UTF-8, UTF-16, ...). | UTF-8
+noRootDirectories | boolean | Skip the root directories (i.e. packages annotated with @jsweet.lang.Root) so that the generated file hierarchy starts at the root directories rather than including the entire directory structure. | false
+enableAssertions | boolean | Java 'assert' statements are transpiled as runtime JavaScript checks. | false
+verbose | boolean | Turn on all levels of logging. | false
+jdkHome | string | Set the JDK home directory to be used to find the Java compiler. If not set, the transpiler will try to use the JAVA_HOME environment variable. Note that the expected JDK version is greater or equals to version 8. | ${java.home}
+declaration | boolean | Generate the d.ts files along with the js files, so that other programs can use them to compile. | false
+dtsOut | string | Specify where to place generated d.ts files when the declaration option is set (by default, d.ts files are generated in the JavaScript output directory - next to the corresponding js files). | outDir
+candiesJsOut | string | Specify where to place extracted JavaScript files from candies. | -
+ingoreDefinitions | boolean | Ignore definitions from def.* packages, so that they are not generated in d.ts definition files. If this option is not set, the transpiler generates d.ts definition files in the directory given by the tsout option. | false
+disableJavaAddons | boolean | Disable runtime addons (instanceof, overloading, class name access, static initialization [...] will not be fully supported). | false
+factoryClassName | string | Use the given factory to tune the default transpiler behavior. | -
 
 ## Run JSweet ##
 
