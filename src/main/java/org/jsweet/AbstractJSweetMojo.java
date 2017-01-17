@@ -157,8 +157,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return sources.toArray(new SourceFile[0]);
 	}
 
-	protected JSweetTranspiler<?> createJSweetTranspiler(MavenProject project)
-			throws MojoExecutionException {
+	protected JSweetTranspiler<?> createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
 		try {
 
@@ -210,8 +209,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 						// try forName just in case
 						factory = (JSweetFactory<?>) Class.forName(factoryClassName).newInstance();
 					} catch (Exception e2) {
-						logInfo("cannot find or instantiate factory class: " + factoryClassName + " - " + e.getMessage()
-								+ ", " + e2.getMessage());
+						throw new MojoExecutionException(
+								"cannot find or instantiate factory class: " + factoryClassName
+										+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+								e2);
 					}
 				}
 			}
@@ -333,7 +334,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return project;
 	}
 
-	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
+	protected void transpile(MavenProject project, JSweetTranspiler<?> transpiler) throws MojoExecutionException {
 		try {
 			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
 					new ConsoleTranspilationHandler());
