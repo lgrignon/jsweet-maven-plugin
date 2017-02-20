@@ -112,6 +112,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(required = false)
 	protected String factoryClassName;
 
+	@Parameter(defaultValue = "false", required = false)
+	protected boolean ignoreTypeScriptErrors;
+
 	@Component
 	protected ArtifactFactory artifactFactory;
 
@@ -239,6 +242,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setSupportGetClass(!disableJavaAddons);
 			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
 			transpiler.setGenerateJsFiles(!tsOnly);
+			transpiler.setIgnoreTypeScriptErrors(ignoreTypeScriptErrors);
 
 			return transpiler;
 
