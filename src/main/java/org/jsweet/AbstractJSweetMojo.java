@@ -160,7 +160,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return sources.toArray(new SourceFile[0]);
 	}
 
-	protected JSweetTranspiler<?> createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
+	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
 		try {
 
@@ -201,16 +201,16 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			JSweetFactory<?> factory = null;
+			JSweetFactory factory = null;
 
 			if (factoryClassName != null) {
 				try {
-					factory = (JSweetFactory<?>) Thread.currentThread().getContextClassLoader()
-							.loadClass(factoryClassName).newInstance();
+					factory = (JSweetFactory) Thread.currentThread().getContextClassLoader().loadClass(factoryClassName)
+							.newInstance();
 				} catch (Exception e) {
 					try {
 						// try forName just in case
-						factory = (JSweetFactory<?>) Class.forName(factoryClassName).newInstance();
+						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
 					} catch (Exception e2) {
 						throw new MojoExecutionException(
 								"cannot find or instantiate factory class: " + factoryClassName
@@ -221,10 +221,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 
 			if (factory == null) {
-				factory = new JSweetFactory<>();
+				factory = new JSweetFactory();
 			}
 
-			JSweetTranspiler<?> transpiler = new JSweetTranspiler<>(factory, getTranspilerWorkingDirectory(project),
+			JSweetTranspiler transpiler = new JSweetTranspiler(factory, getTranspilerWorkingDirectory(project),
 					tsOutputDir, jsOutDir, candiesJsOut, classPath);
 			transpiler.setTscWatchMode(false);
 			transpiler.setEcmaTargetVersion(targetVersion);
@@ -338,7 +338,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return project;
 	}
 
-	protected void transpile(MavenProject project, JSweetTranspiler<?> transpiler) throws MojoExecutionException {
+	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
 		try {
 			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
 					new ConsoleTranspilationHandler());
