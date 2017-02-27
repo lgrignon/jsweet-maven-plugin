@@ -15,8 +15,6 @@
  */
 package org.jsweet;
 
-import static org.jsweet.Util.getTranspilerWorkingDirectory;
-
 import java.io.File;
 
 import org.apache.commons.io.FileUtils;
@@ -53,9 +51,8 @@ public class JSweetCleanMojo extends AbstractJSweetMojo {
 			if (candiesJsOut != null) {
 				FileUtils.deleteQuietly(candiesJsOut);
 			}
-			
-			File workingDir = getTranspilerWorkingDirectory(project);
-			FileUtils.deleteQuietly(workingDir);
+
+			FileUtils.deleteQuietly(workingDir == null ? Util.getTranspilerWorkingDirectory(project) : workingDir);
 		} catch (Exception e) {
 			getLog().error("transpilation failed", e);
 			throw new MojoExecutionException("transpilation failed", e);
