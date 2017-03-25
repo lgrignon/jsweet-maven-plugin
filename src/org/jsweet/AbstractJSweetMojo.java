@@ -39,6 +39,7 @@ import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.SourceFile;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
+import org.jsweet.transpiler.util.ProcessUtil;
 
 import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
@@ -73,6 +74,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false, readonly = true)
 	protected String sourceRoot;
+
+	@Parameter(required = false, readonly = true)
+	protected String extraPath;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean verbose;
@@ -317,6 +321,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
 		try {
+			if (isNotBlank(extraPath)) {
+				logInfo("extraPath=" + extraPath);
+				ProcessUtil.EXTRA_PATH = extraPath;
+			}
+			
 			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
 					new ConsoleTranspilationHandler());
 			try {
