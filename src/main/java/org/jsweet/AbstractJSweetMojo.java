@@ -2,7 +2,6 @@ package org.jsweet;
 
 import static java.util.stream.Collectors.joining;
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import static org.jsweet.Util.getTranspilerWorkingDirectory;
 
 import java.io.File;
 import java.io.IOException;
@@ -112,6 +111,15 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(required = false)
 	protected String factoryClassName;
 
+	@Parameter(defaultValue = "false", required = false)
+	protected boolean ignoreTypeScriptErrors;
+
+	@Parameter(required = false)
+	protected File header;
+
+	@Parameter(required = false)
+	protected File workingDir;
+
 	@Component
 	protected ArtifactFactory artifactFactory;
 
@@ -157,8 +165,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return sources.toArray(new SourceFile[0]);
 	}
 
-	protected JSweetTranspiler<?> createJSweetTranspiler(MavenProject project)
-			throws MojoExecutionException {
+	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
 		try {
 
@@ -199,29 +206,31 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			JSweetFactory<?> factory = null;
+			JSweetFactory factory = null;
 
 			if (factoryClassName != null) {
 				try {
-					factory = (JSweetFactory<?>) Thread.currentThread().getContextClassLoader()
-							.loadClass(factoryClassName).newInstance();
+					factory = (JSweetFactory) Thread.currentThread().getContextClassLoader().loadClass(factoryClassName)
+							.newInstance();
 				} catch (Exception e) {
 					try {
 						// try forName just in case
-						factory = (JSweetFactory<?>) Class.forName(factoryClassName).newInstance();
+						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
 					} catch (Exception e2) {
-						logInfo("cannot find or instantiate factory class: " + factoryClassName + " - " + e.getMessage()
-								+ ", " + e2.getMessage());
+						throw new MojoExecutionException(
+								"cannot find or instantiate factory class: " + factoryClassName
+										+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+								e2);
 					}
 				}
 			}
 
 			if (factory == null) {
-				factory = new JSweetFactory<>();
+				factory = new JSweetFactory();
 			}
 
-			JSweetTranspiler<?> transpiler = new JSweetTranspiler<>(factory, getTranspilerWorkingDirectory(project),
-					tsOutputDir, jsOutDir, candiesJsOut, classPath);
+			JSweetTranspiler transpiler = new JSweetTranspiler(factory, workingDir, tsOutputDir, jsOutDir, candiesJsOut,
+					classPath);
 			transpiler.setTscWatchMode(false);
 			transpiler.setEcmaTargetVersion(targetVersion);
 			transpiler.setModuleKind(module);
@@ -238,6 +247,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setSupportGetClass(!disableJavaAddons);
 			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
 			transpiler.setGenerateJsFiles(!tsOnly);
+			transpiler.setIgnoreTypeScriptErrors(ignoreTypeScriptErrors);
+			transpiler.setHeaderFile(header);
 
 			return transpiler;
 
