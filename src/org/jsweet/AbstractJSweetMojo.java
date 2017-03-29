@@ -243,7 +243,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	protected File getSourceRoot() throws IOException {
 		File sourceRoot = null;
-		if (isNotBlank(this.dtsOut)) {
+		if (isNotBlank(this.sourceRoot)) {
 			sourceRoot = new File(this.sourceRoot);
 		}
 		return sourceRoot;
