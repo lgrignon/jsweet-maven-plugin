@@ -98,6 +98,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "false", required = false)
 	protected boolean enableAssertions;
+	
+	@Parameter(defaultValue = "false", required = false)
+	protected boolean disableSinglePrecisionFloats;
 
 	@Parameter(defaultValue = "${java.home}")
 	protected File jdkHome;
@@ -249,6 +252,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setGenerateJsFiles(!tsOnly);
 			transpiler.setIgnoreTypeScriptErrors(ignoreTypeScriptErrors);
 			transpiler.setHeaderFile(header);
+			transpiler.setDisableSinglePrecisionFloats(disableSinglePrecisionFloats);
 
 			return transpiler;
 
@@ -355,6 +359,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				transpiler.transpile(transpilationHandler, sources);
 
 			} catch (NoClassDefFoundError error) {
+				error.printStackTrace();
 				transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
 						JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
 			}
