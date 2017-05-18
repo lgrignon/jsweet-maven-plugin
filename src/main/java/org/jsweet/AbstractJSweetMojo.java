@@ -76,9 +76,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected boolean verbose;
 
 	@Parameter(defaultValue = "false", required = false, readonly = true)
-	protected boolean disableJavaAddons;
-
-	@Parameter(defaultValue = "false", required = false, readonly = true)
 	protected boolean ignoreDefinitions;
 
 	@Parameter(required = false, readonly = true)
@@ -98,6 +95,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(defaultValue = "false", required = false)
 	protected boolean enableAssertions;
+	
+	@Parameter(defaultValue = "false", required = false)
+	protected boolean disableSinglePrecisionFloats;
 
 	@Parameter(defaultValue = "${java.home}")
 	protected File jdkHome;
@@ -189,7 +189,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("tsOnly: " + tsOnly);
 			logInfo("declarations: " + declaration);
 			logInfo("ignoreDefinitions: " + ignoreDefinitions);
-			logInfo("disableJavaAddons: " + disableJavaAddons);
 			logInfo("declarationOutDir: " + declarationOutDir);
 			logInfo("candiesJsOutDir: " + candiesJsOut);
 			logInfo("ecmaTargetVersion: " + targetVersion);
@@ -243,12 +242,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			transpiler.setGenerateDeclarations(declaration);
 			transpiler.setDeclarationsOutputDir(declarationOutDir);
 			transpiler.setGenerateDefinitions(!ignoreDefinitions);
-			transpiler.setInterfaceTracking(!disableJavaAddons);
-			transpiler.setSupportGetClass(!disableJavaAddons);
-			transpiler.setSupportSaticLazyInitialization(!disableJavaAddons);
 			transpiler.setGenerateJsFiles(!tsOnly);
 			transpiler.setIgnoreTypeScriptErrors(ignoreTypeScriptErrors);
 			transpiler.setHeaderFile(header);
+			transpiler.setDisableSinglePrecisionFloats(disableSinglePrecisionFloats);
 
 			return transpiler;
 
@@ -355,6 +352,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				transpiler.transpile(transpilationHandler, sources);
 
 			} catch (NoClassDefFoundError error) {
+				error.printStackTrace();
 				transpilationHandler.report(JSweetProblem.JAVA_COMPILER_NOT_FOUND, null,
 						JSweetProblem.JAVA_COMPILER_NOT_FOUND.getMessage());
 			}
