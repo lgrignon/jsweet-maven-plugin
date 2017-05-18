@@ -88,7 +88,6 @@ declaration | boolean | Generate the d.ts files along with the js files, so that
 dtsOut | string | Specify where to place generated d.ts files when the declaration option is set (by default, d.ts files are generated in the JavaScript output directory - next to the corresponding js files). | outDir
 candiesJsOut | string | Specify where to place extracted JavaScript files from candies. | -
 ingoreDefinitions | boolean | Ignore definitions from def.* packages, so that they are not generated in d.ts definition files. If this option is not set, the transpiler generates d.ts definition files in the directory given by the tsout option. | false
-disableJavaAddons | boolean | Disable runtime addons (instanceof, overloading, class name access, static initialization [...] will not be fully supported). | false
 factoryClassName | string | Use the given factory to tune the default transpiler behavior. | -
 header | file | A file that contains a header to be written at the beginning of each generated file. If left unspecified, JSweet will generate a default header. | -
 workingDir | directory | The directory JSweet uses to store temporary files such as extracted candies. JSweet uses '.jsweet' if left unspecified. | -
