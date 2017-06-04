@@ -71,8 +71,8 @@ Name     |    Type       | Values | Default
 -------- | ------------- | ------ | -------
 targetVersion | enum | ES3, ES5, ES6 | ES3
 module | enum | The module kind (none, commonjs, amd, system or umd). | none
-outDir | string | JS files output directory | .jsweet/js
-tsOut | string | Specify where to place generated TypeScript files. | .jsweet/ts
+outDir | string | JS files output directory | target/js
+tsOut | string | Specify where to place generated TypeScript files. | target/ts
 tsOnly | boolean | Do not compile the TypeScript output (let an external TypeScript compiler do so). | false
 includes | string[] | Java source files to be included | -
 excludes | string[] | Source files to be excluded | -
