@@ -24,6 +24,7 @@ import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.artifact.resolver.ArtifactResolver;
 import org.apache.maven.artifact.resolver.ResolutionNode;
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -147,22 +148,37 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 		List<SourceFile> sources = new LinkedList<>();
 		for (String sourcePath : sourcePaths) {
-			DirectoryScanner dirScanner = new DirectoryScanner();
-			dirScanner.setBasedir(new File(sourcePath));
-			dirScanner.setIncludes(includes);
-			dirScanner.setExcludes(excludes);
-			dirScanner.scan();
+			scanForJavaFiles(sources, sourcePath);
+		}
+		
+		/*
+		 * Collect possible source files listed on resources
+		 */
+		@SuppressWarnings("unchecked")
+		List<Resource> resources = project.getResources();
 
-			for (String includedPath : dirScanner.getIncludedFiles()) {
-				if (includedPath.endsWith(".java")) {
-					sources.add(new SourceFile(new File(sourcePath, includedPath)));
-				}
-			}
+		for (Resource resource : resources) {
+			String directory = resource.getDirectory();
+			scanForJavaFiles(sources, directory);
 		}
 
 		logInfo("sourceFiles=" + sources);
 
 		return sources.toArray(new SourceFile[0]);
+	}
+
+	private void scanForJavaFiles(List<SourceFile> sources, String sourcePath) {
+		DirectoryScanner dirScanner = new DirectoryScanner();
+		dirScanner.setBasedir(new File(sourcePath));
+		dirScanner.setIncludes(includes);
+		dirScanner.setExcludes(excludes);
+		dirScanner.scan();
+
+		for (String includedPath : dirScanner.getIncludedFiles()) {
+			if (includedPath.endsWith(".java")) {
+				sources.add(new SourceFile(new File(sourcePath, includedPath)));
+			}
+		}
 	}
 
 	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
