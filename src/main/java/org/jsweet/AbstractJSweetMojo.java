@@ -40,6 +40,7 @@ import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.SourceFile;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
+import org.jsweet.transpiler.util.ProcessUtil;
 
 public abstract class AbstractJSweetMojo extends AbstractMojo {
 
@@ -103,6 +104,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(defaultValue = "${java.home}")
 	protected File jdkHome;
 
+	@Parameter(required = false)
+	protected String extraSystemPath;
+
 	@Parameter(defaultValue = "${localRepository}", required = true)
 	protected ArtifactRepository localRepository;
 
@@ -136,30 +140,26 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	protected SourceFile[] collectSourceFiles(MavenProject project) {
-
-		@SuppressWarnings("unchecked")
-		List<String> sourcePaths = project.getCompileSourceRoots();
 
 		logInfo("source includes: " + ArrayUtils.toString(includes));
 		logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
+		List<String> sourcePaths = project.getCompileSourceRoots();
 		logInfo("sources paths: " + sourcePaths);
 
 		List<SourceFile> sources = new LinkedList<>();
 		for (String sourcePath : sourcePaths) {
-			scanForJavaFiles(sources, sourcePath);
+			scanForJavaFiles(sources, new File(sourcePath));
 		}
-		
-		/*
-		 * Collect possible source files listed on resources
-		 */
-		@SuppressWarnings("unchecked")
+
 		List<Resource> resources = project.getResources();
+		logInfo("sources paths from resources: " + sourcePaths);
 
 		for (Resource resource : resources) {
 			String directory = resource.getDirectory();
-			scanForJavaFiles(sources, directory);
+			scanForJavaFiles(sources, new File(directory));
 		}
 
 		logInfo("sourceFiles=" + sources);
@@ -167,16 +167,21 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return sources.toArray(new SourceFile[0]);
 	}
 
-	private void scanForJavaFiles(List<SourceFile> sources, String sourcePath) {
+	private void scanForJavaFiles(List<SourceFile> sources, File sourceDirectory) {
+		if (!sourceDirectory.exists()) {
+			getLog().debug(sourceDirectory.getAbsolutePath() + " is declared but doesn't exist");
+			return;
+		}
+
 		DirectoryScanner dirScanner = new DirectoryScanner();
-		dirScanner.setBasedir(new File(sourcePath));
+		dirScanner.setBasedir(sourceDirectory);
 		dirScanner.setIncludes(includes);
 		dirScanner.setExcludes(excludes);
 		dirScanner.scan();
 
 		for (String includedPath : dirScanner.getIncludedFiles()) {
 			if (includedPath.endsWith(".java")) {
-				sources.add(new SourceFile(new File(sourcePath, includedPath)));
+				sources.add(new SourceFile(new File(sourceDirectory, includedPath)));
 			}
 		}
 	}
@@ -216,6 +221,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("factoryClassName: " + factoryClassName);
 
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
+
+			logInfo("extraSystemPath: " + extraSystemPath);
+			if (isNotBlank(extraSystemPath)) {
+				ProcessUtil.addExtraPath(extraSystemPath);
+			}
 
 			if (verbose != null && verbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
@@ -257,7 +267,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				transpiler.setBundle(bundle);
 			}
 			if (sourceMap != null) {
-				transpiler.setPreserveSourceLineNumbers(sourceMap);
+				transpiler.setGenerateSourceMaps(sourceMap);
 			}
 			File sourceRoot = getSourceRoot();
 			if (sourceRoot != null) {
