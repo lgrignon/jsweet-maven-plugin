@@ -37,6 +37,7 @@ import org.jsweet.transpiler.JSweetFactory;
 import org.jsweet.transpiler.JSweetProblem;
 import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
+import org.jsweet.transpiler.ModuleResolution;
 import org.jsweet.transpiler.SourceFile;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
@@ -107,6 +108,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(required = false)
 	protected String extraSystemPath;
 
+	@Parameter(required = false)
+	protected ModuleResolution moduleResolution;
+	
 	@Parameter(defaultValue = "${localRepository}", required = true)
 	protected ArtifactRepository localRepository;
 
@@ -302,6 +306,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 			if (disableSinglePrecisionFloats != null) {
 				transpiler.setDisableSinglePrecisionFloats(disableSinglePrecisionFloats);
+			}
+			if(moduleResolution != null) {
+			    transpiler.setModuleResolution(moduleResolution);
 			}
 			if (tsOutputDir != null) {
 				transpiler.setTsOutputDir(tsOutputDir);
