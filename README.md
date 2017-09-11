@@ -70,7 +70,7 @@ The configuration options of the plugin:
 Name     |    Type       | Values | Default
 -------- | ------------- | ------ | -------
 targetVersion | enum | ES3, ES5, ES6 | ES3
-module | enum | The module kind (none, commonjs, amd, system or umd). | none
+module | enum | Any of the ModuleKind enum's values (e.g. none, commonjs, umd, es2015). | none
 moduleResolution | enum | The module resolution strategy (classic, node). | classic
 outDir | string | JS files output directory | target/js
 tsOut | string | Specify where to place generated TypeScript files. | target/ts
