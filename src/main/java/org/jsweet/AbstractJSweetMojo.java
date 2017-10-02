@@ -110,7 +110,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected ModuleResolution moduleResolution;
-	
+
 	@Parameter(defaultValue = "${localRepository}", required = true)
 	protected ArtifactRepository localRepository;
 
@@ -190,11 +190,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
-	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
+	protected JSweetTranspiler createJSweetTranspiler() throws MojoExecutionException {
 
 		try {
 
-			List<File> dependenciesFiles = getCandiesJars(project);
+			List<File> dependenciesFiles = getCandiesJars();
 
 			String classPath = dependenciesFiles.stream() //
 					.map(f -> f.getAbsolutePath()) //
@@ -258,8 +258,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				factory = new JSweetFactory();
 			}
 
-			JSweetTranspiler transpiler = new JSweetTranspiler(factory, workingDir, tsOutputDir, jsOutDir, candiesJsOut,
-					classPath);
+			if (workingDir != null && !workingDir.isAbsolute()) {
+				workingDir = new File(getBaseDirectory(), workingDir.getPath());
+			}
+
+			JSweetTranspiler transpiler = new JSweetTranspiler(getBaseDirectory(), null, factory, workingDir,
+					tsOutputDir, jsOutDir, candiesJsOut, classPath);
 			transpiler.setTscWatchMode(false);
 			if (targetVersion != null) {
 				transpiler.setEcmaTargetVersion(targetVersion);
@@ -307,8 +311,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			if (disableSinglePrecisionFloats != null) {
 				transpiler.setDisableSinglePrecisionFloats(disableSinglePrecisionFloats);
 			}
-			if(moduleResolution != null) {
-			    transpiler.setModuleResolution(moduleResolution);
+			if (moduleResolution != null) {
+				transpiler.setModuleResolution(moduleResolution);
 			}
 			if (tsOutputDir != null) {
 				transpiler.setTsOutputDir(tsOutputDir);
@@ -328,7 +332,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File getDeclarationsOutDir() throws IOException {
 		File declarationOutDir = null;
 		if (isNotBlank(this.dtsOut)) {
-			declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+			File dtsOutFile = new File(this.dtsOut);
+			if (!dtsOutFile.isAbsolute()) {
+				dtsOutFile = new File(getBaseDirectory(), this.dtsOut);
+			}
+			return dtsOutFile.getCanonicalFile();
 		}
 		return declarationOutDir;
 	}
@@ -336,32 +344,47 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File getSourceRoot() throws IOException {
 		File sourceRoot = null;
 		if (isNotBlank(this.sourceRoot)) {
-			sourceRoot = new File(this.sourceRoot);
+			File sourceRootFile = new File(this.sourceRoot);
+			if (!sourceRootFile.isAbsolute()) {
+				sourceRootFile = new File(getBaseDirectory(), this.sourceRoot);
+			}
+			return sourceRootFile.getCanonicalFile();
 		}
 		return sourceRoot;
 	}
 
 	protected File getJsOutDir() throws IOException {
 		if (isNotBlank(this.outDir)) {
-			String jsOutputDirPath = new File(this.outDir).getCanonicalPath();
-			return new File(jsOutputDirPath);
+			File jsOutFile = new File(this.outDir);
+			if (!jsOutFile.isAbsolute()) {
+				jsOutFile = new File(getBaseDirectory(), this.outDir);
+			}
+			return jsOutFile.getCanonicalFile();
 		} else {
 			return null;
 		}
+	}
+
+	protected File getBaseDirectory() throws IOException {
+		return getMavenProject().getBasedir().getAbsoluteFile();
 	}
 
 	protected File getTsOutDir() throws IOException {
 		if (isNotBlank(this.tsOut)) {
-			String tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
-			return new File(tsOutputDirPath);
+			File tsOutFile = new File(this.tsOut);
+			if (!tsOutFile.isAbsolute()) {
+				tsOutFile = new File(getBaseDirectory(), this.tsOut);
+			}
+			return tsOutFile.getCanonicalFile();
 
 		} else {
 			return null;
 		}
 	}
 
-	protected List<File> getCandiesJars(MavenProject project)
-			throws ArtifactResolutionException, ArtifactNotFoundException {
+	protected List<File> getCandiesJars() throws ArtifactResolutionException, ArtifactNotFoundException {
+
+		MavenProject project = getMavenProject();
 
 		@SuppressWarnings("unchecked")
 		List<Dependency> dependencies = project.getDependencies();

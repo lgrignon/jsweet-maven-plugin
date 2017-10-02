@@ -61,7 +61,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
 		MavenProject project = getMavenProject();
 
-		transpiler = createJSweetTranspiler(project);
+		transpiler = createJSweetTranspiler();
 
 		getLog().info("- Starting transpilator process  ... ");
 
