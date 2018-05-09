@@ -56,6 +56,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected String tsOut;
+	
+	@Parameter(required = false)
+	protected Boolean tsserver;
 
 	@Parameter(required = false)
 	protected Boolean bundle;
@@ -212,6 +215,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("bundle: " + bundle);
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
+			logInfo("tsserver: " + tsserver);
 			logInfo("declarations: " + declaration);
 			logInfo("ignoreDefinitions: " + ignoreDefinitions);
 			logInfo("declarationOutDir: " + declarationOutDir);
@@ -273,6 +277,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 			if (bundle != null) {
 				transpiler.setBundle(bundle);
+			}
+			if (tsserver != null) {
+				transpiler.setUseTsserver(tsserver);
 			}
 			if (sourceMap != null) {
 				transpiler.setGenerateSourceMaps(sourceMap);

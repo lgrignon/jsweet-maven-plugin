@@ -75,6 +75,7 @@ moduleResolution | enum | The module resolution strategy (classic, node). | clas
 outDir | string | JS files output directory | target/js
 tsOut | string | Specify where to place generated TypeScript files. | target/ts
 tsOnly | boolean | Do not compile the TypeScript output (let an external TypeScript compiler do so). | false
+tsserver | boolean | Faster ts2js transpilation using tsserver | false
 includes | string[] | Java source files to be included | -
 excludes | string[] | Source files to be excluded | -
 bundle | boolean | Bundle up all the generated code in a single file, which can be used in the browser. The bundle files are called 'bundle.ts', 'bundle.d.ts', or 'bundle.js' depending on the kind of generated code. NOTE: bundles are not compatible with any module kind other than 'none'. | false
