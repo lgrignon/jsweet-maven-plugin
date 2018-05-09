@@ -28,9 +28,11 @@ import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.jsweet.transpiler.EcmaScriptComplianceLevel;
 import org.jsweet.transpiler.JSweetFactory;
@@ -137,6 +139,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Component
 	protected ArtifactMetadataSource metadataSource;
+	/**
+	 * The plugin descriptor
+	 * 
+	 * @parameter default-value="${descriptor}"
+	 */
+	@Component
+	private PluginDescriptor descriptor;
 
 	private void logInfo(String content) {
 		if (verbose != null && verbose) {
@@ -190,7 +199,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
-	protected JSweetTranspiler createJSweetTranspiler() throws MojoExecutionException {
+	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException
+	{
 
 		try {
 
@@ -238,14 +248,32 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			JSweetFactory factory = null;
 
 			if (factoryClassName != null) {
-				try {
-					factory = (JSweetFactory) Thread.currentThread().getContextClassLoader().loadClass(factoryClassName)
-							.newInstance();
-				} catch (Exception e) {
-					try {
+				ClassRealm realm = descriptor.getClassRealm();
+				List runtimeClasspathElements = project.getRuntimeClasspathElements();
+
+				for (int i = 0; i < runtimeClasspathElements.size(); i++)
+				{
+					String element = (String) runtimeClasspathElements.get(i);
+
+					File elementFile = new File(element);
+					realm.addURL(elementFile.toURI().toURL());
+				}
+
+				try
+				{
+					Class<?> c = realm.loadClass(factoryClassName);
+					factory = (JSweetFactory) c.newInstance();
+
+				}
+				catch (Exception e)
+				{
+					try
+					{
 						// try forName just in case
 						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
-					} catch (Exception e2) {
+					}
+					catch (Exception e2)
+					{
 						throw new MojoExecutionException(
 								"cannot find or instantiate factory class: " + factoryClassName
 										+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
