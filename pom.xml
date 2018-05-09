@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>2.2.0-SNAPSHOT</version>
+	<version>2.2.1-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
 	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
 
@@ -109,8 +109,15 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-project</artifactId>
-			<version>2.2.1</version>
+			<artifactId>maven-core</artifactId>
+			<version>3.3.3</version>
+
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -121,6 +128,12 @@
 			<groupId>org.jsweet</groupId>
 			<artifactId>jsweet-transpiler</artifactId>
 			<version>2.2.0-SNAPSHOT</version>
+			<exclusions>
+				<exclusion>
+					<groupId>com.google.guava</groupId>
+					<artifactId>guava</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>

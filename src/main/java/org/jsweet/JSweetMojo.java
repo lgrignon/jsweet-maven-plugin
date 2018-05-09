@@ -36,7 +36,7 @@ public class JSweetMojo extends AbstractJSweetMojo {
 
 		MavenProject project = getMavenProject();
 
-		JSweetTranspiler transpiler = createJSweetTranspiler();
+		JSweetTranspiler transpiler = createJSweetTranspiler(project);
 
 		transpile(project, transpiler);
 	}
