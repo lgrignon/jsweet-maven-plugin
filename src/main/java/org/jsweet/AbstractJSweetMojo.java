@@ -228,6 +228,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("sourceMap: " + sourceMap);
 			logInfo("sourceRoot: " + sourceRoot);
 			logInfo("verbose: " + verbose);
+			logInfo("veryVerbose: " + veryVerbose);
 			logInfo("jdkHome: " + jdkHome);
 			logInfo("factoryClassName: " + factoryClassName);
 
@@ -238,6 +239,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				ProcessUtil.addExtraPath(extraSystemPath);
 			}
 
+			LogManager.getLogger("org.jsweet").setLevel(Level.WARN);
+			
 			if (verbose != null && verbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.DEBUG);
 			}
