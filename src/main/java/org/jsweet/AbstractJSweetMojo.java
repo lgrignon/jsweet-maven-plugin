@@ -28,9 +28,11 @@ import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.jsweet.transpiler.EcmaScriptComplianceLevel;
 import org.jsweet.transpiler.JSweetFactory;
@@ -143,6 +145,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Component
 	protected ArtifactMetadataSource metadataSource;
+	/**
+	 * The plugin descriptor
+	 * 
+	 * @parameter default-value="${descriptor}"
+	 */
+	@Component
+	private PluginDescriptor descriptor;
 
 	private void logInfo(String content) {
 		if (verbose != null && verbose || veryVerbose != null && veryVerbose) {
@@ -196,7 +205,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
-	protected JSweetTranspiler createJSweetTranspiler() throws MojoExecutionException {
+	// maven api is sometimes untyped
+	@SuppressWarnings("unchecked")
+	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
 		try {
 
@@ -240,7 +251,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 
 			LogManager.getLogger("org.jsweet").setLevel(Level.WARN);
-			
+
 			if (verbose != null && verbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.DEBUG);
 			}
@@ -251,9 +262,19 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			JSweetFactory factory = null;
 
 			if (factoryClassName != null) {
+				ClassRealm realm = descriptor.getClassRealm();
+
+				List<String> runtimeClasspathElements = project.getRuntimeClasspathElements();
+
+				for (String element : runtimeClasspathElements) {
+					File elementFile = new File(element);
+					realm.addURL(elementFile.toURI().toURL());
+				}
+
 				try {
-					factory = (JSweetFactory) Thread.currentThread().getContextClassLoader().loadClass(factoryClassName)
-							.newInstance();
+					Class<?> c = realm.loadClass(factoryClassName);
+					factory = (JSweetFactory) c.newInstance();
+
 				} catch (Exception e) {
 					try {
 						// try forName just in case
