@@ -56,7 +56,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected String tsOut;
-	
+
 	@Parameter(required = false)
 	protected Boolean tsserver;
 
@@ -80,6 +80,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected Boolean verbose;
+
+	@Parameter(required = false)
+	protected Boolean veryVerbose;
 
 	@Parameter(required = false)
 	protected Boolean ignoreDefinitions;
@@ -142,7 +145,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected ArtifactMetadataSource metadataSource;
 
 	private void logInfo(String content) {
-		if (verbose != null && verbose) {
+		if (verbose != null && verbose || veryVerbose != null && veryVerbose) {
 			getLog().info(content);
 		}
 	}
@@ -236,6 +239,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 
 			if (verbose != null && verbose) {
+				LogManager.getLogger("org.jsweet").setLevel(Level.DEBUG);
+			}
+			if (veryVerbose != null && veryVerbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
@@ -250,9 +256,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 						// try forName just in case
 						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
 					} catch (Exception e2) {
-						throw new MojoExecutionException(
-								"cannot find or instantiate factory class: " + factoryClassName
-										+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+						throw new MojoExecutionException("cannot find or instantiate factory class: " + factoryClassName
+								+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
 								e2);
 					}
 				}
