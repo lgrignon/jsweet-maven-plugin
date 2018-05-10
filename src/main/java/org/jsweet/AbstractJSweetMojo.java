@@ -15,8 +15,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.factory.ArtifactFactory;
-import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
@@ -138,13 +136,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File workingDir;
 
 	@Component
-	protected ArtifactFactory artifactFactory;
-
-	@Component
 	protected ArtifactResolver resolver;
 
-	@Component
-	protected ArtifactMetadataSource metadataSource;
 	/**
 	 * The plugin descriptor
 	 * 
@@ -159,7 +152,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected SourceFile[] collectSourceFiles(MavenProject project) {
 
 		logInfo("source includes: " + ArrayUtils.toString(includes));
@@ -205,8 +197,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		}
 	}
 
-	// maven api is sometimes untyped
-	@SuppressWarnings("unchecked")
 	protected JSweetTranspiler createJSweetTranspiler(MavenProject project) throws MojoExecutionException {
 
 		try {
@@ -422,7 +412,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 		MavenProject project = getMavenProject();
 
-		@SuppressWarnings("unchecked")
 		List<Dependency> dependencies = project.getDependencies();
 		logInfo("dependencies=" + dependencies);
 
@@ -433,12 +422,17 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				getLog().warn("dependency type not-jar excluded from candies detection: " + dependency);
 				continue;
 			}
-			Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
-					dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-			logInfo("candies detection: add project dependency " + dependency + " => " + mavenArtifact);
+			@SuppressWarnings("deprecation")
+			Artifact dependencyArtifact = project.getDependencyArtifacts().stream()
+					.filter(artifact -> artifact.getGroupId().equals(dependency.getGroupId())
+							&& artifact.getArtifactId().equals(dependency.getArtifactId())
+							&& artifact.getVersion().equals(dependency.getVersion()))
+					.findFirst().get();
 
-			directDependencies.add(mavenArtifact);
+			logInfo("candies detection: add project dependency " + dependency + " => " + dependencyArtifact);
+
+			directDependencies.add(dependencyArtifact);
 		}
 
 		// lookup for transitive dependencies
@@ -447,9 +441,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				project.getArtifact(), //
 				remoteRepositories, //
 				localRepository, //
-				metadataSource);
+				null);
 
-		@SuppressWarnings("unchecked")
 		Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
 		logInfo("all candies artifacts: " + allDependenciesArtifacts);
 
