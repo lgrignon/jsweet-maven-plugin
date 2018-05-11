@@ -15,6 +15,8 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.factory.ArtifactFactory;
+import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.artifact.resolver.ArtifactNotFoundException;
 import org.apache.maven.artifact.resolver.ArtifactResolutionException;
@@ -136,8 +138,13 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File workingDir;
 
 	@Component
+	protected ArtifactFactory artifactFactory;
+
+	@Component
 	protected ArtifactResolver resolver;
 
+	@Component
+	protected ArtifactMetadataSource metadataSource;
 	/**
 	 * The plugin descriptor
 	 * 
@@ -422,17 +429,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				getLog().warn("dependency type not-jar excluded from candies detection: " + dependency);
 				continue;
 			}
+			Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
+					dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
 
-			@SuppressWarnings("deprecation")
-			Artifact dependencyArtifact = project.getDependencyArtifacts().stream()
-					.filter(artifact -> artifact.getGroupId().equals(dependency.getGroupId())
-							&& artifact.getArtifactId().equals(dependency.getArtifactId())
-							&& artifact.getVersion().equals(dependency.getVersion()))
-					.findFirst().get();
+			logInfo("candies detection: add project dependency " + dependency + " => " + mavenArtifact);
 
-			logInfo("candies detection: add project dependency " + dependency + " => " + dependencyArtifact);
-
-			directDependencies.add(dependencyArtifact);
+			directDependencies.add(mavenArtifact);
 		}
 
 		// lookup for transitive dependencies
@@ -441,7 +443,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				project.getArtifact(), //
 				remoteRepositories, //
 				localRepository, //
-				null);
+				metadataSource);
 
 		Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
 		logInfo("all candies artifacts: " + allDependenciesArtifacts);
