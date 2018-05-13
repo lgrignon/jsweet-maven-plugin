@@ -32,6 +32,7 @@ import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.jsweet.transpiler.EcmaScriptComplianceLevel;
@@ -145,13 +146,17 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Component
 	protected ArtifactMetadataSource metadataSource;
-	/**
-	 * The plugin descriptor
-	 * 
-	 * @parameter default-value="${descriptor}"
-	 */
+
 	@Component
 	private PluginDescriptor descriptor;
+
+	@Component
+	private RuntimeInformation runtime;
+
+	@Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
+		logInfo("maven version: " + runtime.getMavenVersion());
+	}
 
 	private void logInfo(String content) {
 		if (verbose != null && verbose || veryVerbose != null && veryVerbose) {

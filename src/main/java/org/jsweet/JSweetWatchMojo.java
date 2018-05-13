@@ -58,7 +58,8 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 	private JSweetTranspiler transpiler;
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
-
+		super.execute();
+		
 		MavenProject project = getMavenProject();
 
 		transpiler = createJSweetTranspiler(project);

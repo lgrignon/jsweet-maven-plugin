@@ -31,6 +31,8 @@ import org.jsweet.transpiler.JSweetTranspiler;
 public class JSweetMojo extends AbstractJSweetMojo {
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
+		super.execute();
+		
 		getLog().info("JSweet transpiler version " + JSweetConfig.getVersionNumber() + " (build date: "
 				+ JSweetConfig.getBuildDate() + ")");
 
