@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -266,25 +267,38 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			if (factoryClassName != null) {
 				ClassRealm realm = descriptor.getClassRealm();
 
-				List<String> runtimeClasspathElements = project.getRuntimeClasspathElements();
-
-				for (String element : runtimeClasspathElements) {
+				List<String> classpathElements = project.getRuntimeClasspathElements();
+				classpathElements.addAll(project.getCompileClasspathElements());
+				for (String element : classpathElements) {
 					File elementFile = new File(element);
 					realm.addURL(elementFile.toURI().toURL());
+				}
+				for (File dependencyFile : dependenciesFiles) {
+					realm.addURL(dependencyFile.toURI().toURL());
 				}
 
 				try {
 					Class<?> c = realm.loadClass(factoryClassName);
 					factory = (JSweetFactory) c.newInstance();
 
-				} catch (Exception e) {
+				} catch (ClassNotFoundException e) {
+					logInfo("factory not found using ClassRealm.loadClass");
 					try {
-						// try forName just in case
-						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
-					} catch (Exception e2) {
-						throw new MojoExecutionException("cannot find or instantiate factory class: " + factoryClassName
-								+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
-								e2);
+						ClassLoader classLoader = new URLClassLoader(realm.getURLs(), Thread.currentThread().getContextClassLoader());
+						factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
+					} catch (ClassNotFoundException e2) {
+						logInfo("factory not found using Thread.currentThread().getContextClassLoader().loadClass");
+						try {
+							// try forName just in case
+							factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
+						} catch (ClassNotFoundException e3) {
+							logInfo("factory not found using Class.forName");
+
+							throw new MojoExecutionException("cannot find or instantiate factory class: "
+									+ factoryClassName
+									+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+									e3);
+						}
 					}
 				}
 			}
