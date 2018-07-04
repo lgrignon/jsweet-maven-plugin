@@ -96,6 +96,7 @@ header | file | A file that contains a header to be written at the beginning of 
 workingDir | directory | The directory JSweet uses to store temporary files such as extracted candies. JSweet uses '.jsweet' if left unspecified. | -
 disableSinglePrecisionFloats | boolean | By default, for a target version >=ES5, JSweet will force Java floats to be mapped to JavaScript numbers that will be constrained with ES5 Math.fround function. If this option is true, then the calls to Math.fround are erased and the generated program will use the JavaScript default precision (double precision). | false
 extraSystemPath | string | Allow an extra path to be added to the system path. | -
+ignoredProblems | string[] | Array of JSweetProblems which won't be reported or cause failure. | -
 ## Run JSweet ##
 
 Then, just run the maven command line as usual:

@@ -43,6 +43,7 @@ import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.ModuleResolution;
 import org.jsweet.transpiler.SourceFile;
+import org.jsweet.transpiler.SourcePosition;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 import org.jsweet.transpiler.util.ProcessUtil;
@@ -130,6 +131,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(required = false)
 	protected String factoryClassName;
 
+	@Parameter(required = false)
+	protected List<JSweetProblem> ignoredProblems;
+	
 	@Parameter(required = false)
 	protected Boolean ignoreTypeScriptErrors;
 
@@ -245,6 +249,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("veryVerbose: " + veryVerbose);
 			logInfo("jdkHome: " + jdkHome);
 			logInfo("factoryClassName: " + factoryClassName);
+			logInfo("ignoredProblems: " + ignoredProblems);
 
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
@@ -284,7 +289,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				} catch (ClassNotFoundException e) {
 					logInfo("factory not found using ClassRealm.loadClass");
 					try {
-						ClassLoader classLoader = new URLClassLoader(realm.getURLs(), Thread.currentThread().getContextClassLoader());
+						ClassLoader classLoader = new URLClassLoader(realm.getURLs(),
+								Thread.currentThread().getContextClassLoader());
 						factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
 					} catch (ClassNotFoundException e2) {
 						logInfo("factory not found using Thread.currentThread().getContextClassLoader().loadClass");
@@ -484,10 +490,24 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return project;
 	}
 
+	private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {
+
+		public JSweetMavenPluginTranspilationHandler() {
+			super(new ConsoleTranspilationHandler());
+		}
+		
+		@Override
+		public void report(JSweetProblem problem, SourcePosition sourcePosition, String message) {
+			if (ignoredProblems != null && ignoredProblems.contains(problem)) {
+				return;
+			}
+			super.report(problem, sourcePosition, message);
+		}
+	}
+
 	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
 		try {
-			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
-					new ConsoleTranspilationHandler());
+			JSweetMavenPluginTranspilationHandler transpilationHandler = new JSweetMavenPluginTranspilationHandler();
 			try {
 
 				SourceFile[] sources = collectSourceFiles(project);
