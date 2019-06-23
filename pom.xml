@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>2.3.0</version>
+	<version>2.3.1-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
 	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
 
@@ -120,7 +120,7 @@
 		<dependency>
 			<groupId>org.jsweet</groupId>
 			<artifactId>jsweet-transpiler</artifactId>
-			<version>2.3.0</version>
+			<version>2.3.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
