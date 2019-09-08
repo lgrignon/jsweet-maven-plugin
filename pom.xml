@@ -30,7 +30,7 @@
 	</licenses>
 
 	<properties>
-		<jsweet.transpiler.version>2.3.3-SNAPSHOT</jsweet.transpiler.version>
+		<jsweet.transpiler.version>2.3.3</jsweet.transpiler.version>
 	</properties>
 
 	<build>
