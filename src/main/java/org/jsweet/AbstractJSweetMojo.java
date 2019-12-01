@@ -133,7 +133,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected List<JSweetProblem> ignoredProblems;
-	
+
 	@Parameter(required = false)
 	protected Boolean ignoreTypeScriptErrors;
 
@@ -250,8 +250,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("jdkHome: " + jdkHome);
 			logInfo("factoryClassName: " + factoryClassName);
 			logInfo("ignoredProblems: " + ignoredProblems);
-
-			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
 			logInfo("extraSystemPath: " + extraSystemPath);
 			if (isNotBlank(extraSystemPath)) {
@@ -447,7 +445,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		List<Dependency> dependencies = project.getDependencies();
 		logInfo("dependencies=" + dependencies);
 
-		// add artifacts of declared dependencies
 		List<Artifact> directDependencies = new LinkedList<>();
 		for (Dependency dependency : dependencies) {
 			if (!dependency.getType().equals("jar")) {
@@ -495,7 +492,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		public JSweetMavenPluginTranspilationHandler() {
 			super(new ConsoleTranspilationHandler());
 		}
-		
+
 		@Override
 		public void report(JSweetProblem problem, SourcePosition sourcePosition, String message) {
 			if (ignoredProblems != null && ignoredProblems.contains(problem)) {

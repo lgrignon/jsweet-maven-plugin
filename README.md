@@ -48,10 +48,10 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 <plugin>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>1.2.0-SNAPSHOT</version>
+	<version>3.0.0</version>
 	<configuration>
 		<outDir>javascript</outDir>
-		<targetVersion>ES3</targetVersion>
+		<targetVersion>ES6</targetVersion>
 	</configuration>
 	<executions>
 		<execution>
@@ -126,7 +126,7 @@ your application. For instance, a node server and a HTML5 client app:
 					<plugin>
 						<groupId>org.jsweet</groupId>
 						<artifactId>jsweet-maven-plugin</artifactId>
-						<version>1.0.0-SNAPSHOT</version>
+						<version>3.0.0</version>
 						<configuration>
 							<outFile>client/out.js</outFile>
 							<targetVersion>ES6</targetVersion>
@@ -157,7 +157,7 @@ your application. For instance, a node server and a HTML5 client app:
 					<plugin>
 						<groupId>org.jsweet</groupId>
 						<artifactId>jsweet-maven-plugin</artifactId>
-						<version>1.0.0-SNAPSHOT</version>
+						<version>3.0.0</version>
 						<configuration>
 							<outFile>server/full.js</outFile>
 <!-- 							<outDir>server</outDir> -->
