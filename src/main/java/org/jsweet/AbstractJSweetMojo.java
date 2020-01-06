@@ -5,17 +5,28 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.ToolProvider;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
+import org.apache.maven.artifact.DependencyResolutionRequiredException;
 import org.apache.maven.artifact.factory.ArtifactFactory;
 import org.apache.maven.artifact.metadata.ArtifactMetadataSource;
 import org.apache.maven.artifact.repository.ArtifactRepository;
@@ -47,6 +58,8 @@ import org.jsweet.transpiler.SourcePosition;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 import org.jsweet.transpiler.util.ProcessUtil;
+
+import com.sun.source.util.JavacTask;
 
 public abstract class AbstractJSweetMojo extends AbstractMojo {
 
@@ -265,51 +278,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
-			JSweetFactory factory = null;
-
-			if (factoryClassName != null) {
-				ClassRealm realm = descriptor.getClassRealm();
-
-				List<String> classpathElements = project.getRuntimeClasspathElements();
-				classpathElements.addAll(project.getCompileClasspathElements());
-				for (String element : classpathElements) {
-					File elementFile = new File(element);
-					realm.addURL(elementFile.toURI().toURL());
-				}
-				for (File dependencyFile : dependenciesFiles) {
-					realm.addURL(dependencyFile.toURI().toURL());
-				}
-
-				try {
-					Class<?> c = realm.loadClass(factoryClassName);
-					factory = (JSweetFactory) c.newInstance();
-
-				} catch (ClassNotFoundException e) {
-					logInfo("factory not found using ClassRealm.loadClass");
-					try {
-						ClassLoader classLoader = new URLClassLoader(realm.getURLs(),
-								Thread.currentThread().getContextClassLoader());
-						factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
-					} catch (ClassNotFoundException e2) {
-						logInfo("factory not found using Thread.currentThread().getContextClassLoader().loadClass");
-						try {
-							// try forName just in case
-							factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
-						} catch (ClassNotFoundException e3) {
-							logInfo("factory not found using Class.forName");
-
-							throw new MojoExecutionException("cannot find or instantiate factory class: "
-									+ factoryClassName
-									+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
-									e3);
-						}
-					}
-				}
-			}
-
-			if (factory == null) {
-				factory = new JSweetFactory();
-			}
+			JSweetFactory factory = createJSweetFactory(project, dependenciesFiles, classPath);
 
 			if (workingDir != null && !workingDir.isAbsolute()) {
 				workingDir = new File(getBaseDirectory(), workingDir.getPath());
@@ -383,6 +352,131 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			getLog().error("failed to create transpiler", e);
 			throw new MojoExecutionException("failed to create transpiler", e);
 		}
+	}
+
+	private JSweetFactory createJSweetFactory(MavenProject project, List<File> dependenciesFiles, String classPath)
+			throws DependencyResolutionRequiredException, MalformedURLException, IOException, MojoExecutionException {
+		JSweetFactory factory = null;
+
+		if (factoryClassName != null) {
+			ClassRealm realm = descriptor.getClassRealm();
+
+			List<String> classpathElements = project.getRuntimeClasspathElements();
+			classpathElements.addAll(project.getCompileClasspathElements());
+			for (String element : classpathElements) {
+				File elementFile = new File(element);
+				realm.addURL(elementFile.toURI().toURL());
+			}
+			for (File dependencyFile : dependenciesFiles) {
+				realm.addURL(dependencyFile.toURI().toURL());
+			}
+
+			try {
+				Class<?> c = realm.loadClass(factoryClassName);
+				factory = (JSweetFactory) c.newInstance();
+
+			} catch (Exception e) {
+				logInfo("factory not found using ClassRealm.loadClass");
+				ClassLoader classLoader = null;
+				try {
+					classLoader = new URLClassLoader(realm.getURLs(), Thread.currentThread().getContextClassLoader());
+					factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
+				} catch (Exception e2) {
+					logInfo("factory not found using Thread.currentThread().getContextClassLoader().loadClass");
+					try {
+						// try forName just in case
+						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
+					} catch (Exception e3) {
+						logInfo("factory not found using Class.forName");
+
+						String relativePath = factoryClassName.replace(".", File.separator) + ".java";
+
+						List<String> sourcePaths = project.getCompileSourceRoots();
+						for (String sourcePath : sourcePaths) {
+							File factorySourceFile = new File(sourcePath, relativePath);
+							try {
+								factory = compileJSweetFactory(factorySourceFile, classLoader, classPath);
+							} catch (Exception compileFactoryException) {
+								getLog().error("cannot compile factory class from source file: " + factorySourceFile,
+										compileFactoryException);
+							}
+							if (factory != null) {
+								break;
+							}
+						}
+
+						if (factory == null) {
+							throw new MojoExecutionException("cannot find or instantiate factory class: "
+									+ factoryClassName
+									+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+									e3);
+						}
+					}
+				}
+			}
+
+			logInfo("JSweet factory class " + factoryClassName + ": LOADED");
+		}
+
+		if (factory == null) {
+			factory = new JSweetFactory();
+		}
+		return factory;
+	}
+
+	private JSweetFactory compileJSweetFactory(File factorySourceFile, ClassLoader classLoader, String classPath)
+			throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+
+		logInfo("factory source path: " + factorySourceFile.getCanonicalPath() + " - exists="
+				+ factorySourceFile.exists());
+		JSweetFactory factory = null;
+		if (factorySourceFile.exists()) {
+			JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
+			StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, Locale.getDefault(),
+					Charset.forName("UTF-8"));
+
+			List<File> javaFiles = new ArrayList<>();
+			javaFiles.add(factorySourceFile);
+
+			File factoryModuleSourceFile = new File(factorySourceFile.getParentFile(), "module-info.java");
+			if (factoryModuleSourceFile.exists()) {
+				javaFiles.add(factoryModuleSourceFile);
+			}
+
+			logInfo("factory files: " + javaFiles);
+			Iterable<? extends JavaFileObject> javaFileObjectsIterable = fileManager
+					.getJavaFileObjectsFromFiles(javaFiles);
+			List<JavaFileObject> javaFileObjects = new ArrayList<>();
+			javaFileObjectsIterable.forEach(javaFileObjects::add);
+
+			List<String> options = new ArrayList<>();
+			options.add("-Xlint:path");
+			options.add("-cp");
+			options.add(classPath);
+			options.add("--module-path");
+			options.add(classPath);
+			options.add("-encoding");
+			options.add("UTF-8");
+
+			String compiledClassDirectoryPath = getBaseDirectory().getCanonicalPath() + "/target/classes";
+			options.add("-d");
+			options.add(compiledClassDirectoryPath);
+
+			logInfo("creating JavaCompiler task with options: " + options);
+			JavacTask task = (JavacTask) compiler.getTask(null, fileManager, null, options, null, javaFileObjects);
+			if (!task.call()) {
+				throw new RuntimeException(factorySourceFile + " compilation ended with errors");
+			}
+
+			logInfo("factory COMPILATION SUCCEEDED! (to " + compiledClassDirectoryPath + ")");
+			URL compiledClassDirectoryURL = new File(compiledClassDirectoryPath).toURI().toURL();
+			classLoader = new URLClassLoader(new URL[] { compiledClassDirectoryURL }, classLoader);
+			logInfo("loading class " + factoryClassName + " looking in " + compiledClassDirectoryURL);
+
+			factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
+		}
+
+		return factory;
 	}
 
 	protected File getDeclarationsOutDir() throws IOException {
