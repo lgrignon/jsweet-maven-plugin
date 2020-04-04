@@ -98,7 +98,7 @@
 					<skip>${skipJavadoc}</skip>
 					<fixTags>all</fixTags>
 					<failOnError>false</failOnError>
-					<destDir>jsweet-transpiler-${project.version}</destDir>
+					<destDir>jsweet-maven-plugin-${project.version}</destDir>
 				</configuration>
 				<executions>
 					<execution>
