@@ -5,10 +5,10 @@
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
 	<version>${jsweet.transpiler.version}</version>
-	<packaging>maven-plugin</packaging>
-	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
-
 	<name>JSweet maven plugin</name>
+	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
+	<url>http://www.jsweet.org</url>
+	<packaging>maven-plugin</packaging>
 	<developers>
 		<developer>
 			<id>lgrignon</id>
@@ -28,6 +28,15 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+	<issueManagement>
+		<url>https://github.com/lgrignon/jsweet-maven-plugin/issues</url>
+		<system>GitHub Issues</system>
+	</issueManagement>
+	<scm>
+		<url>https://github.com/lgrignon/jsweet-maven-plugin</url>
+		<connection>scm:git:git://github.com/lgrignon/jsweet-maven-plugin.git</connection>
+		<developerConnection>scm:git:git@github.com:lgrignon/jsweet-maven-plugin.git</developerConnection>
+	</scm>
 
 	<properties>
 		<jsweet.transpiler.version>3.0.0-RC2</jsweet.transpiler.version>
@@ -147,6 +156,24 @@
 						</lifecycleMappingMetadata>
 					</configuration>
 				</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.6</version>
+				<configuration>
+					<skip>${skipSigning}</skip>
+				</configuration>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
