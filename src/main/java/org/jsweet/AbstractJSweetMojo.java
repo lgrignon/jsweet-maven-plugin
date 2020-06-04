@@ -419,7 +419,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 				SourceFile[] sources = collectSourceFiles(project);
 
-				transpiler.transpile(transpilationHandler, sources);
+				transpiler.transpile(transpilationHandler, null, sources);
 
 			} catch (NoClassDefFoundError error) {
 				error.printStackTrace();
