@@ -58,7 +58,8 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 	private JSweetTranspiler transpiler;
 
 	public void execute() throws MojoFailureException, MojoExecutionException {
-
+		super.execute();
+		
 		MavenProject project = getMavenProject();
 
 		transpiler = createJSweetTranspiler(project);
@@ -72,23 +73,15 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 	}
 
 	private void initialize(MavenProject project) {
-
-		/* */
-
-		@SuppressWarnings("unchecked")
 		List<String> sourcePaths = project.getCompileSourceRoots();
 
 		try {
 
 			for (;;) {
 
-				/* */
-
 				WatchService watchService = FileSystems.getDefault().newWatchService();
 
 				List<Path> watchedPaths = new ArrayList<>();
-
-				/* */
 
 				getLog().info("+ Registering source path");
 
@@ -100,15 +93,9 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 
 				getLog().info("- Registering source path , DONE .");
 
-				/* */
-
 				getLog().info("");
 
-				/* */
-
 				getLog().info("- Listening for file change ... ");
-
-				/* */
 
 				try {
 					watch(watchService);
@@ -116,15 +103,8 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 					watchService.close();
 				}
 
-				/* */
-
 				Thread.yield();
-
-				/* */
-
 			}
-
-			/* */
 
 		} catch (IOException ioException) {
 

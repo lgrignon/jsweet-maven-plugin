@@ -5,6 +5,7 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,9 +29,12 @@ import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.rtinfo.RuntimeInformation;
+import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.codehaus.plexus.util.DirectoryScanner;
 import org.jsweet.transpiler.EcmaScriptComplianceLevel;
 import org.jsweet.transpiler.JSweetFactory;
@@ -39,6 +43,7 @@ import org.jsweet.transpiler.JSweetTranspiler;
 import org.jsweet.transpiler.ModuleKind;
 import org.jsweet.transpiler.ModuleResolution;
 import org.jsweet.transpiler.SourceFile;
+import org.jsweet.transpiler.SourcePosition;
 import org.jsweet.transpiler.util.ConsoleTranspilationHandler;
 import org.jsweet.transpiler.util.ErrorCountTranspilationHandler;
 import org.jsweet.transpiler.util.ProcessUtil;
@@ -56,6 +61,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected String tsOut;
+
+	@Parameter(required = false)
+	protected Boolean tsserver;
 
 	@Parameter(required = false)
 	protected Boolean bundle;
@@ -77,6 +85,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected Boolean verbose;
+
+	@Parameter(required = false)
+	protected Boolean veryVerbose;
 
 	@Parameter(required = false)
 	protected Boolean ignoreDefinitions;
@@ -110,7 +121,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected ModuleResolution moduleResolution;
-	
+
 	@Parameter(defaultValue = "${localRepository}", required = true)
 	protected ArtifactRepository localRepository;
 
@@ -120,6 +131,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Parameter(required = false)
 	protected String factoryClassName;
 
+	@Parameter(required = false)
+	protected List<JSweetProblem> ignoredProblems;
+	
 	@Parameter(required = false)
 	protected Boolean ignoreTypeScriptErrors;
 
@@ -138,13 +152,23 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	@Component
 	protected ArtifactMetadataSource metadataSource;
 
+	@Component
+	private PluginDescriptor descriptor;
+
+	@Component
+	private RuntimeInformation runtime;
+
+	@Override
+	public void execute() throws MojoExecutionException, MojoFailureException {
+		logInfo("maven version: " + runtime.getMavenVersion());
+	}
+
 	private void logInfo(String content) {
-		if (verbose != null && verbose) {
+		if (verbose != null && verbose || veryVerbose != null && veryVerbose) {
 			getLog().info(content);
 		}
 	}
 
-	@SuppressWarnings("unchecked")
 	protected SourceFile[] collectSourceFiles(MavenProject project) {
 
 		logInfo("source includes: " + ArrayUtils.toString(includes));
@@ -194,7 +218,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 		try {
 
-			List<File> dependenciesFiles = getCandiesJars(project);
+			List<File> dependenciesFiles = getCandiesJars();
 
 			String classPath = dependenciesFiles.stream() //
 					.map(f -> f.getAbsolutePath()) //
@@ -212,6 +236,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("bundle: " + bundle);
 			logInfo("tsOut: " + tsOutputDir);
 			logInfo("tsOnly: " + tsOnly);
+			logInfo("tsserver: " + tsserver);
 			logInfo("declarations: " + declaration);
 			logInfo("ignoreDefinitions: " + ignoreDefinitions);
 			logInfo("declarationOutDir: " + declarationOutDir);
@@ -221,8 +246,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			logInfo("sourceMap: " + sourceMap);
 			logInfo("sourceRoot: " + sourceRoot);
 			logInfo("verbose: " + verbose);
+			logInfo("veryVerbose: " + veryVerbose);
 			logInfo("jdkHome: " + jdkHome);
 			logInfo("factoryClassName: " + factoryClassName);
+			logInfo("ignoredProblems: " + ignoredProblems);
 
 			JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
@@ -231,25 +258,53 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				ProcessUtil.addExtraPath(extraSystemPath);
 			}
 
+			LogManager.getLogger("org.jsweet").setLevel(Level.WARN);
+
 			if (verbose != null && verbose) {
+				LogManager.getLogger("org.jsweet").setLevel(Level.DEBUG);
+			}
+			if (veryVerbose != null && veryVerbose) {
 				LogManager.getLogger("org.jsweet").setLevel(Level.ALL);
 			}
 
 			JSweetFactory factory = null;
 
 			if (factoryClassName != null) {
+				ClassRealm realm = descriptor.getClassRealm();
+
+				List<String> classpathElements = project.getRuntimeClasspathElements();
+				classpathElements.addAll(project.getCompileClasspathElements());
+				for (String element : classpathElements) {
+					File elementFile = new File(element);
+					realm.addURL(elementFile.toURI().toURL());
+				}
+				for (File dependencyFile : dependenciesFiles) {
+					realm.addURL(dependencyFile.toURI().toURL());
+				}
+
 				try {
-					factory = (JSweetFactory) Thread.currentThread().getContextClassLoader().loadClass(factoryClassName)
-							.newInstance();
-				} catch (Exception e) {
+					Class<?> c = realm.loadClass(factoryClassName);
+					factory = (JSweetFactory) c.newInstance();
+
+				} catch (ClassNotFoundException e) {
+					logInfo("factory not found using ClassRealm.loadClass");
 					try {
-						// try forName just in case
-						factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
-					} catch (Exception e2) {
-						throw new MojoExecutionException(
-								"cannot find or instantiate factory class: " + factoryClassName
-										+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
-								e2);
+						ClassLoader classLoader = new URLClassLoader(realm.getURLs(),
+								Thread.currentThread().getContextClassLoader());
+						factory = (JSweetFactory) classLoader.loadClass(factoryClassName).newInstance();
+					} catch (ClassNotFoundException e2) {
+						logInfo("factory not found using Thread.currentThread().getContextClassLoader().loadClass");
+						try {
+							// try forName just in case
+							factory = (JSweetFactory) Class.forName(factoryClassName).newInstance();
+						} catch (ClassNotFoundException e3) {
+							logInfo("factory not found using Class.forName");
+
+							throw new MojoExecutionException("cannot find or instantiate factory class: "
+									+ factoryClassName
+									+ " (make sure the class is in the plugin's classpath and that it defines an empty public constructor)",
+									e3);
+						}
 					}
 				}
 			}
@@ -258,8 +313,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				factory = new JSweetFactory();
 			}
 
-			JSweetTranspiler transpiler = new JSweetTranspiler(factory, workingDir, tsOutputDir, jsOutDir, candiesJsOut,
-					classPath);
+			if (workingDir != null && !workingDir.isAbsolute()) {
+				workingDir = new File(getBaseDirectory(), workingDir.getPath());
+			}
+
+			JSweetTranspiler transpiler = new JSweetTranspiler(getBaseDirectory(), null, factory, workingDir,
+					tsOutputDir, jsOutDir, candiesJsOut, classPath);
 			transpiler.setTscWatchMode(false);
 			if (targetVersion != null) {
 				transpiler.setEcmaTargetVersion(targetVersion);
@@ -269,6 +328,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			}
 			if (bundle != null) {
 				transpiler.setBundle(bundle);
+			}
+			if (tsserver != null) {
+				transpiler.setUseTsserver(tsserver);
 			}
 			if (sourceMap != null) {
 				transpiler.setGenerateSourceMaps(sourceMap);
@@ -307,8 +369,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 			if (disableSinglePrecisionFloats != null) {
 				transpiler.setDisableSinglePrecisionFloats(disableSinglePrecisionFloats);
 			}
-			if(moduleResolution != null) {
-			    transpiler.setModuleResolution(moduleResolution);
+			if (moduleResolution != null) {
+				transpiler.setModuleResolution(moduleResolution);
 			}
 			if (tsOutputDir != null) {
 				transpiler.setTsOutputDir(tsOutputDir);
@@ -328,7 +390,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File getDeclarationsOutDir() throws IOException {
 		File declarationOutDir = null;
 		if (isNotBlank(this.dtsOut)) {
-			declarationOutDir = new File(this.dtsOut).getCanonicalFile();
+			File dtsOutFile = new File(this.dtsOut);
+			if (!dtsOutFile.isAbsolute()) {
+				dtsOutFile = new File(getBaseDirectory(), this.dtsOut);
+			}
+			return dtsOutFile.getCanonicalFile();
 		}
 		return declarationOutDir;
 	}
@@ -336,34 +402,48 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 	protected File getSourceRoot() throws IOException {
 		File sourceRoot = null;
 		if (isNotBlank(this.sourceRoot)) {
-			sourceRoot = new File(this.sourceRoot);
+			File sourceRootFile = new File(this.sourceRoot);
+			if (!sourceRootFile.isAbsolute()) {
+				sourceRootFile = new File(getBaseDirectory(), this.sourceRoot);
+			}
+			return sourceRootFile.getCanonicalFile();
 		}
 		return sourceRoot;
 	}
 
 	protected File getJsOutDir() throws IOException {
 		if (isNotBlank(this.outDir)) {
-			String jsOutputDirPath = new File(this.outDir).getCanonicalPath();
-			return new File(jsOutputDirPath);
+			File jsOutFile = new File(this.outDir);
+			if (!jsOutFile.isAbsolute()) {
+				jsOutFile = new File(getBaseDirectory(), this.outDir);
+			}
+			return jsOutFile.getCanonicalFile();
 		} else {
 			return null;
 		}
+	}
+
+	protected File getBaseDirectory() throws IOException {
+		return getMavenProject().getBasedir().getAbsoluteFile();
 	}
 
 	protected File getTsOutDir() throws IOException {
 		if (isNotBlank(this.tsOut)) {
-			String tsOutputDirPath = new File(this.tsOut).getCanonicalPath();
-			return new File(tsOutputDirPath);
+			File tsOutFile = new File(this.tsOut);
+			if (!tsOutFile.isAbsolute()) {
+				tsOutFile = new File(getBaseDirectory(), this.tsOut);
+			}
+			return tsOutFile.getCanonicalFile();
 
 		} else {
 			return null;
 		}
 	}
 
-	protected List<File> getCandiesJars(MavenProject project)
-			throws ArtifactResolutionException, ArtifactNotFoundException {
+	protected List<File> getCandiesJars() throws ArtifactResolutionException, ArtifactNotFoundException {
 
-		@SuppressWarnings("unchecked")
+		MavenProject project = getMavenProject();
+
 		List<Dependency> dependencies = project.getDependencies();
 		logInfo("dependencies=" + dependencies);
 
@@ -390,7 +470,6 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				localRepository, //
 				metadataSource);
 
-		@SuppressWarnings("unchecked")
 		Set<ResolutionNode> allDependenciesArtifacts = dependenciesResolutionResult.getArtifactResolutionNodes();
 		logInfo("all candies artifacts: " + allDependenciesArtifacts);
 
@@ -411,10 +490,24 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 		return project;
 	}
 
+	private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {
+
+		public JSweetMavenPluginTranspilationHandler() {
+			super(new ConsoleTranspilationHandler());
+		}
+		
+		@Override
+		public void report(JSweetProblem problem, SourcePosition sourcePosition, String message) {
+			if (ignoredProblems != null && ignoredProblems.contains(problem)) {
+				return;
+			}
+			super.report(problem, sourcePosition, message);
+		}
+	}
+
 	protected void transpile(MavenProject project, JSweetTranspiler transpiler) throws MojoExecutionException {
 		try {
-			ErrorCountTranspilationHandler transpilationHandler = new ErrorCountTranspilationHandler(
-					new ConsoleTranspilationHandler());
+			JSweetMavenPluginTranspilationHandler transpilationHandler = new JSweetMavenPluginTranspilationHandler();
 			try {
 
 				SourceFile[] sources = collectSourceFiles(project);

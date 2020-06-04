@@ -1,13 +1,14 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>2.3.8</version>
-	<packaging>maven-plugin</packaging>
-	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
-
+	<version>${jsweet.transpiler.version}</version>
 	<name>JSweet maven plugin</name>
+	<description>JSweet maven plugin providing build and clean operations of JSweet sources</description>
+	<url>http://www.jsweet.org</url>
+	<packaging>maven-plugin</packaging>
 	<developers>
 		<developer>
 			<id>lgrignon</id>
@@ -27,6 +28,22 @@
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
+	<issueManagement>
+		<url>https://github.com/lgrignon/jsweet-maven-plugin/issues</url>
+		<system>GitHub Issues</system>
+	</issueManagement>
+	<scm>
+		<url>https://github.com/lgrignon/jsweet-maven-plugin</url>
+		<connection>scm:git:git://github.com/lgrignon/jsweet-maven-plugin.git</connection>
+		<developerConnection>scm:git:git@github.com:lgrignon/jsweet-maven-plugin.git</developerConnection>
+	</scm>
+
+	<properties>
+		<jsweet.transpiler.version>2.3.8</jsweet.transpiler.version>
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
 
 	<build>
 		<plugins>
@@ -63,6 +80,65 @@
 							<goal>helpmojo</goal>
 						</goals>
 						<phase>process-classes</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>2.10.3</version>
+				<configuration>
+					<javadocVersion>1.8</javadocVersion>
+					<sourcepath>src/main/java</sourcepath>
+					<encoding>${project.build.sourceEncoding}</encoding>
+					<skip>${skipJavadoc}</skip>
+					<fixTags>all</fixTags>
+					<failOnError>false</failOnError>
+					<destDir>jsweet-maven-plugin-${project.version}</destDir>
+				</configuration>
+				<executions>
+					<execution>
+						<id>attach-javadocs</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.6</version>
+				<configuration>
+					<skip>${skipSigning}</skip>
+					
+					<!-- This is necessary for gpg to not try to use the pinentry programs -->
+					<gpgArguments>
+						<arg>--pinentry-mode</arg>
+						<arg>loopback</arg>
+					</gpgArguments>
+				</configuration>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
@@ -105,12 +181,12 @@
 		<dependency>
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-plugin-api</artifactId>
-			<version>3.3.3</version>
+			<version>3.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
-			<artifactId>maven-project</artifactId>
-			<version>2.2.1</version>
+			<artifactId>maven-core</artifactId>
+			<version>3.5.3</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven</groupId>
@@ -120,7 +196,12 @@
 		<dependency>
 			<groupId>org.jsweet</groupId>
 			<artifactId>jsweet-transpiler</artifactId>
-			<version>2.3.8</version>
+			<version>${jsweet.transpiler.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.plugin-tools</groupId>

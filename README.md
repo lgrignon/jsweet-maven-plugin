@@ -70,11 +70,12 @@ The configuration options of the plugin:
 Name     |    Type       | Values | Default
 -------- | ------------- | ------ | -------
 targetVersion | enum | ES3, ES5, ES6 | ES3
-module | enum | The module kind (none, commonjs, amd, system or umd). | none
+module | enum | Any of the ModuleKind enum's values (e.g. none, commonjs, umd, es2015). | none
 moduleResolution | enum | The module resolution strategy (classic, node). | classic
 outDir | string | JS files output directory | target/js
 tsOut | string | Specify where to place generated TypeScript files. | target/ts
 tsOnly | boolean | Do not compile the TypeScript output (let an external TypeScript compiler do so). | false
+tsserver | boolean | Faster ts2js transpilation using tsserver | false
 includes | string[] | Java source files to be included | -
 excludes | string[] | Source files to be excluded | -
 bundle | boolean | Bundle up all the generated code in a single file, which can be used in the browser. The bundle files are called 'bundle.ts', 'bundle.d.ts', or 'bundle.js' depending on the kind of generated code. NOTE: bundles are not compatible with any module kind other than 'none'. | false
@@ -83,7 +84,8 @@ sourceRoot | string | Specify the location where debugger should locate Java fil
 encoding | string | Force the Java compiler to use a specific encoding (UTF-8, UTF-16, ...). | UTF-8
 noRootDirectories | boolean | Skip the root directories (i.e. packages annotated with @jsweet.lang.Root) so that the generated file hierarchy starts at the root directories rather than including the entire directory structure. | false
 enableAssertions | boolean | Java 'assert' statements are transpiled as runtime JavaScript checks. | false
-verbose | boolean | Turn on all levels of logging. | false
+verbose | boolean | Turn on general information logging (INFO LEVEL). | false
+veryVerbose | boolean | Turn on all levels of logging. | false
 jdkHome | string | Set the JDK home directory to be used to find the Java compiler. If not set, the transpiler will try to use the JAVA_HOME environment variable. Note that the expected JDK version is greater or equals to version 8. | ${java.home}
 declaration | boolean | Generate the d.ts files along with the js files, so that other programs can use them to compile. | false
 dtsOut | string | Specify where to place generated d.ts files when the declaration option is set (by default, d.ts files are generated in the JavaScript output directory - next to the corresponding js files). | outDir
@@ -94,6 +96,7 @@ header | file | A file that contains a header to be written at the beginning of 
 workingDir | directory | The directory JSweet uses to store temporary files such as extracted candies. JSweet uses '.jsweet' if left unspecified. | -
 disableSinglePrecisionFloats | boolean | By default, for a target version >=ES5, JSweet will force Java floats to be mapped to JavaScript numbers that will be constrained with ES5 Math.fround function. If this option is true, then the calls to Math.fround are erased and the generated program will use the JavaScript default precision (double precision). | false
 extraSystemPath | string | Allow an extra path to be added to the system path. | -
+ignoredProblems | string[] | Array of JSweetProblems which won't be reported or cause failure. | -
 ## Run JSweet ##
 
 Then, just run the maven command line as usual:
