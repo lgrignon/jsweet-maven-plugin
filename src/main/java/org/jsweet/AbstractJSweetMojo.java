@@ -155,6 +155,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
 	@Parameter(required = false)
 	protected File workingDir;
+	
+	@Parameter(required = false)
+    protected Boolean usingJavaRuntime;
 
 	@Component
 	protected ArtifactFactory artifactFactory;
@@ -343,8 +346,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 				transpiler.setTsOutputDir(tsOutputDir);
 			}
 			if (jsOutDir != null) {
-				transpiler.setJsOutputDir(jsOutDir);
-			}
+                transpiler.setJsOutputDir(jsOutDir);
+            }
+            if (usingJavaRuntime != null) {
+                transpiler.setUsingJavaRuntime(usingJavaRuntime);
+            }
 
 			return transpiler;
 
