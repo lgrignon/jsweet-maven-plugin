@@ -2,7 +2,7 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.jsweet</groupId>
+	<groupId>org.jsweet.v3</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
 	<version>${jsweet.transpiler.version}</version>
 	<name>JSweet maven plugin</name>
@@ -39,7 +39,7 @@
 	</scm>
 
 	<properties>
-		<jsweet.transpiler.version>3.0.0-RC4</jsweet.transpiler.version>
+		<jsweet.transpiler.version>3.0.0-SNAPSHOT</jsweet.transpiler.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version.release>11</java.version.release>
 		<java.version>1.${java.version.release}</java.version>
@@ -200,7 +200,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jsweet</groupId>
+			<groupId>org.jsweet.v3</groupId>
 			<artifactId>jsweet-transpiler</artifactId>
 			<version>${jsweet.transpiler.version}</version>
 		</dependency>
