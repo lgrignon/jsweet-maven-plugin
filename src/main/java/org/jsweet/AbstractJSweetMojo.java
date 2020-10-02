@@ -10,6 +10,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -594,6 +595,34 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
     private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {
 
+        class Error {
+            final JSweetProblem problem;
+            final SourcePosition sourcePosition;
+            final String message;
+
+            public Error(JSweetProblem problem, SourcePosition sourcePosition, String message) {
+                this.problem = problem;
+                this.sourcePosition = sourcePosition;
+                this.message = message;
+            }
+
+            @Override
+            public String toString() {
+                String userFriendlyValue = "";
+                if (sourcePosition != null) {
+                    userFriendlyValue += sourcePosition.toString();
+                }
+                userFriendlyValue += message;
+                return userFriendlyValue;
+            }
+        }
+
+        private final List<Error> errors = new ArrayList<>();
+
+        public List<Error> getErrors() {
+            return Collections.unmodifiableList(errors);
+        }
+
         public JSweetMavenPluginTranspilationHandler() {
             super(new ConsoleTranspilationHandler());
         }
@@ -604,6 +633,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
                 return;
             }
             super.report(problem, sourcePosition, message);
+
+            errors.add(new Error(problem, sourcePosition, message));
         }
     }
 
@@ -625,8 +656,16 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             int errorCount = transpilationHandler.getErrorCount();
 
             if (errorCount > 0) {
+
+                StringBuilder errorsSummaryBuilder = new StringBuilder(
+                        "\n\n=========================================\nTRANSPILATION ERRORS SUMMARY:\n");
+                for (JSweetMavenPluginTranspilationHandler.Error error : transpilationHandler.getErrors()) {
+                    errorsSummaryBuilder.append("* " + error + "\n");
+                }
+                errorsSummaryBuilder.append("\n\n=========================================");
+
                 throw new MojoFailureException("transpilation failed with " + errorCount + " error(s) and "
-                        + transpilationHandler.getWarningCount() + " warning(s)");
+                        + transpilationHandler.getWarningCount() + " warning(s)" + errorsSummaryBuilder);
             } else {
 
                 if (transpilationHandler.getWarningCount() > 0) {
