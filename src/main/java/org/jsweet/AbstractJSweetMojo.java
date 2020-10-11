@@ -85,6 +85,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter(required = false)
     protected String sourceRoot;
 
+    /**
+     * If present, overrides maven's project.compileSourceRoots
+     */
+    @Parameter( defaultValue = "${compileSourceRootsOverride}", required = false )
+    private List<String> compileSourceRootsOverride;
+    
     @Parameter(required = false)
     protected Boolean verbose;
 
@@ -179,7 +185,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         logInfo("source includes: " + ArrayUtils.toString(includes));
         logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
-        List<String> sourcePaths = project.getCompileSourceRoots();
+        List<String> sourcePaths = getCompileSourceRoots(project);
         logInfo("sources paths: " + sourcePaths);
 
         List<SourceFile> sources = new LinkedList<>();
@@ -497,6 +503,14 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         Map<?, ?> ctx = getPluginContext();
         MavenProject project = (MavenProject) ctx.get("project");
         return project;
+    }
+
+    protected List<String> getCompileSourceRoots(MavenProject project) {
+        if(compileSourceRootsOverride == null || compileSourceRootsOverride.isEmpty()) {
+            return project.getCompileSourceRoots();
+        }
+        logInfo("Overriding compileSourceRoots with: " + compileSourceRootsOverride);
+        return compileSourceRootsOverride;
     }
 
     private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {
