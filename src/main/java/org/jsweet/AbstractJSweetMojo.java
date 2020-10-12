@@ -511,11 +511,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         if (compileSourceRootsOverride == null || compileSourceRootsOverride.isEmpty()) {
             return project.getCompileSourceRoots();
         }
-        compileSourceRootsOverride = compileSourceRootsOverride.stream()
-                .filter(StringUtils::isNotBlank).collect(Collectors.toList());
+        compileSourceRootsOverride = compileSourceRootsOverride.stream().filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
         if (compileSourceRootsOverride.isEmpty()) {
-            getLog().warn("compileSourceRootsOverride has blank compileSourceRoot "
-                    + "element/s. Using defaults: " + project.getCompileSourceRoots());
+            getLog().warn("compileSourceRootsOverride has blank compileSourceRoot " + "element/s. Using defaults: "
+                    + project.getCompileSourceRoots());
             return project.getCompileSourceRoots();
         }
         logInfo("Overriding compileSourceRoots with: " + compileSourceRootsOverride);
