@@ -248,7 +248,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             File jsOutDir = getJsOutDir();
 
             File declarationOutDir = getDeclarationsOutDir();
-            
+
             boolean isTsserverEnabled = true;
             if (this.tsserver != null) {
                 isTsserverEnabled = this.tsserver;
@@ -305,7 +305,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             if (bundle != null) {
                 transpiler.setBundle(bundle);
             }
-           
+
             transpiler.setUseTsserver(isTsserverEnabled);
 
             if (sourceMap != null) {
