@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
@@ -24,6 +25,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
@@ -97,6 +99,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter(required = false)
     protected String sourceRoot;
 
+    /**
+     * If present, overrides maven's project.compileSourceRoots
+     */
+    @Parameter(required = false)
+    private List<String> compileSourceRootsOverride;
+    
     @Parameter(required = false)
     protected Boolean verbose;
 
@@ -217,7 +225,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             getLog().debug(sourceDirectory.getAbsolutePath() + " is declared but doesn't exist");
             return;
         }
-
+        
         DirectoryScanner dirScanner = new DirectoryScanner();
         dirScanner.setBasedir(sourceDirectory);
         dirScanner.setIncludes(includes);
@@ -551,9 +559,11 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         List<Dependency> dependencies = project.getDependencies();
         logInfo("dependencies=" + dependencies);
 
+        // add artifacts of declared dependencies
         List<Artifact> directDependencies = new LinkedList<>();
         for (Dependency dependency : dependencies) {
-            if (!dependency.getType().equals("jar")) {
+            if (!dependency.getType().equals("jar")
+                    || dependency.getScope() != null && !dependency.getScope().equals(Artifact.SCOPE_COMPILE)) {
                 getLog().warn("dependency type not-jar excluded from candies detection: " + dependency);
                 continue;
             }
@@ -591,6 +601,21 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         Map<?, ?> ctx = getPluginContext();
         MavenProject project = (MavenProject) ctx.get("project");
         return project;
+    }
+    
+    protected List<String> getCompileSourceRoots(MavenProject project) {
+        if (compileSourceRootsOverride == null || compileSourceRootsOverride.isEmpty()) {
+            return project.getCompileSourceRoots();
+        }
+        compileSourceRootsOverride = compileSourceRootsOverride.stream().filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+        if (compileSourceRootsOverride.isEmpty()) {
+            getLog().warn("compileSourceRootsOverride has blank compileSourceRoot " + "element/s. Using defaults: "
+                    + project.getCompileSourceRoots());
+            return project.getCompileSourceRoots();
+        }
+        logInfo("Overriding compileSourceRoots with: " + compileSourceRootsOverride);
+        return compileSourceRootsOverride;
     }
 
     private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {

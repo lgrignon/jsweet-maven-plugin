@@ -81,6 +81,7 @@ excludes | string[] | Source files to be excluded | -
 bundle | boolean | Bundle up all the generated code in a single file, which can be used in the browser. The bundle files are called 'bundle.ts', 'bundle.d.ts', or 'bundle.js' depending on the kind of generated code. NOTE: bundles are not compatible with any module kind other than 'none'. | false
 sourceMap | boolean | Generate source map files for the Java files, so that it is possible to debug Java files directly with a debugger that supports source maps (most JavaScript debuggers). | true
 sourceRoot | string | Specify the location where debugger should locate Java files instead of source locations. Use this flag if the sources will be located at run-time in a different location than that at design-time. The location specified will be embedded in the sourceMap to direct the debugger where the source files will be located. | -
+compileSourceRootsOverride | string | Specify other source location/s instead of default source locations. Use this flag if the sources will be generated/preprocessed at build-time to a non standard location. | default compile sources
 encoding | string | Force the Java compiler to use a specific encoding (UTF-8, UTF-16, ...). | UTF-8
 noRootDirectories | boolean | Skip the root directories (i.e. packages annotated with @jsweet.lang.Root) so that the generated file hierarchy starts at the root directories rather than including the entire directory structure. | false
 enableAssertions | boolean | Java 'assert' statements are transpiled as runtime JavaScript checks. | false
@@ -160,33 +161,85 @@ your application. For instance, a node server and a HTML5 client app:
 						<version>3.0.0</version>
 						<configuration>
 							<outFile>server/full.js</outFile>
-<!-- 							<outDir>server</outDir> -->
-						<module>commonjs</module>
-						<targetVersion>ES5</targetVersion>
-						<includes>
-							<include>**/*.java</include>
-						</includes>
-						<excludes>
-							<exclude>**/app/**</exclude>
-						</excludes>
-					</configuration>
-					<executions>
-						<execution>
-							<id>generate-js</id>
-							<phase>generate-sources</phase>
-							<goals>
-								<goal>jsweet</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</build>
-	</profile>
+							<module>commonjs</module>
+							<targetVersion>ES5</targetVersion>
+							<includes>
+								<include>**/*.java</include>
+							</includes>
+							<excludes>
+								<exclude>**/app/**</exclude>
+							</excludes>
+						</configuration>
+						<executions>
+							<execution>
+								<id>generate-js</id>
+								<phase>generate-sources</phase>
+								<goals>
+									<goal>jsweet</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 </profiles>
 ```
 
 then run the desired profile:
 ```
 $ mvn generate-sources -P client
+```
+
+### Use with code generators / preprocessors 
+
+
+When using some code generators/preprocessors (eg: [Project Lombok](https://projectlombok.org/setup/maven)) the code is not ready for JSweet fully yet (eg: there are custom annotations to handle beforehand).
+
+To let JSweet use a non default source directory, the compileSourceRootsOverride config element can be used, for instance with Lombok:
+
+```xml
+<build>                          
+    <plugins>
+        <plugin>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok-maven-plugin</artifactId>
+            <version>1.18.12.0</version>
+            <executions>
+                <execution>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>delombok</goal>
+                    </goals>
+                    <configuration>
+                        <addOutputDirectory>false</addOutputDirectory>
+                        <sourceDirectory>src/main/java</sourceDirectory>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.jsweet</groupId>
+            <artifactId>jsweet-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+                <compileSourceRootsOverride>
+                    <compileSourceRoot>target/generated-sources/delombok</compileSourceRoot>
+                </compileSourceRootsOverride>
+                <sourceRoot>target/generated-sources/delombok</sourceRoot>
+                <outDir>javascript</outDir>
+                <targetVersion>ES5</targetVersion>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>generate-js</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                        <goal>jsweet</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
 ```
