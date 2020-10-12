@@ -13,8 +13,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.maven.artifact.Artifact;
@@ -88,9 +90,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     /**
      * If present, overrides maven's project.compileSourceRoots
      */
-    @Parameter( defaultValue = "${compileSourceRootsOverride}", required = false )
+    @Parameter(required = false)
     private List<String> compileSourceRootsOverride;
-    
+
     @Parameter(required = false)
     protected Boolean verbose;
 
@@ -506,7 +508,14 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     }
 
     protected List<String> getCompileSourceRoots(MavenProject project) {
-        if(compileSourceRootsOverride == null || compileSourceRootsOverride.isEmpty()) {
+        if (compileSourceRootsOverride == null || compileSourceRootsOverride.isEmpty()) {
+            return project.getCompileSourceRoots();
+        }
+        compileSourceRootsOverride = compileSourceRootsOverride.stream()
+                .filter(StringUtils::isNotBlank).collect(Collectors.toList());
+        if (compileSourceRootsOverride.isEmpty()) {
+            getLog().warn("compileSourceRootsOverride has blank compileSourceRoot "
+                    + "element/s. Using defaults: " + project.getCompileSourceRoots());
             return project.getCompileSourceRoots();
         }
         logInfo("Overriding compileSourceRoots with: " + compileSourceRootsOverride);
@@ -516,6 +525,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     private class JSweetMavenPluginTranspilationHandler extends ErrorCountTranspilationHandler {
 
         class Error {
+
             final JSweetProblem problem;
             final SourcePosition sourcePosition;
             final String message;
