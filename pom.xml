@@ -11,7 +11,7 @@
 	<packaging>maven-plugin</packaging>
 
 	<properties>
-		<jsweet.transpiler.version>3.0.0-RC8</jsweet.transpiler.version>
+		<jsweet.transpiler.version>3.0.0-RC9</jsweet.transpiler.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version.release>11</java.version.release>
 		<java.version>1.${java.version.release}</java.version>
