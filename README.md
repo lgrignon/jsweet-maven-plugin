@@ -48,10 +48,10 @@ Enable the JSweet transpiler plugin for the preferred phase (here, generate-sour
 <plugin>
 	<groupId>org.jsweet</groupId>
 	<artifactId>jsweet-maven-plugin</artifactId>
-	<version>2.4.0-SNAPSHOT</version>
+	<version>3.0.0</version>
 	<configuration>
 		<outDir>javascript</outDir>
-		<targetVersion>ES3</targetVersion>
+		<targetVersion>ES6</targetVersion>
 	</configuration>
 	<executions>
 		<execution>
@@ -127,7 +127,7 @@ your application. For instance, a node server and a HTML5 client app:
 					<plugin>
 						<groupId>org.jsweet</groupId>
 						<artifactId>jsweet-maven-plugin</artifactId>
-						<version>2.4.0-SNAPSHOT</version>
+						<version>3.0.0</version>
 						<configuration>
 							<outFile>client/out.js</outFile>
 							<targetVersion>ES6</targetVersion>
@@ -158,32 +158,31 @@ your application. For instance, a node server and a HTML5 client app:
 					<plugin>
 						<groupId>org.jsweet</groupId>
 						<artifactId>jsweet-maven-plugin</artifactId>
-						<version>2.4.0-SNAPSHOT</version>
+						<version>3.0.0</version>
 						<configuration>
 							<outFile>server/full.js</outFile>
-<!-- 							<outDir>server</outDir> -->
-						<module>commonjs</module>
-						<targetVersion>ES5</targetVersion>
-						<includes>
-							<include>**/*.java</include>
-						</includes>
-						<excludes>
-							<exclude>**/app/**</exclude>
-						</excludes>
-					</configuration>
-					<executions>
-						<execution>
-							<id>generate-js</id>
-							<phase>generate-sources</phase>
-							<goals>
-								<goal>jsweet</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-			</plugins>
-		</build>
-	</profile>
+							<module>commonjs</module>
+							<targetVersion>ES5</targetVersion>
+							<includes>
+								<include>**/*.java</include>
+							</includes>
+							<excludes>
+								<exclude>**/app/**</exclude>
+							</excludes>
+						</configuration>
+						<executions>
+							<execution>
+								<id>generate-js</id>
+								<phase>generate-sources</phase>
+								<goals>
+									<goal>jsweet</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 </profiles>
 ```
 
@@ -222,7 +221,7 @@ To let JSweet use a non default source directory, the compileSourceRootsOverride
         <plugin>
             <groupId>org.jsweet</groupId>
             <artifactId>jsweet-maven-plugin</artifactId>
-            <version>2.4.0-SNAPSHOT</version>
+            <version>3.0.0</version>
             <configuration>
                 <compileSourceRootsOverride>
                     <compileSourceRoot>target/generated-sources/delombok</compileSourceRoot>
