@@ -199,7 +199,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         logInfo("source includes: " + ArrayUtils.toString(includes));
         logInfo("source excludes: " + ArrayUtils.toString(excludes));
 
-        List<String> sourcePaths = project.getCompileSourceRoots();
+        List<String> sourcePaths = getCompileSourceRoots(project);
         logInfo("sources paths: " + sourcePaths);
 
         List<SourceFile> sources = new LinkedList<>();
@@ -275,6 +275,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             logInfo("moduleKind: " + module);
             logInfo("sourceMap: " + sourceMap);
             logInfo("sourceRoot: " + sourceRoot);
+            logInfo("compileSourceRootsOverride" + compileSourceRootsOverride);
             logInfo("verbose: " + verbose);
             logInfo("veryVerbose: " + veryVerbose);
             logInfo("jdkHome: " + jdkHome);
@@ -411,7 +412,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
                         String relativePath = factoryClassName.replace(".", File.separator) + ".java";
 
-                        List<String> sourcePaths = project.getCompileSourceRoots();
+                        List<String> sourcePaths = getCompileSourceRoots(project);
                         for (String sourcePath : sourcePaths) {
                             File factorySourceFile = new File(sourcePath, relativePath);
                             try {
