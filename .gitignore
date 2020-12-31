@@ -1,3 +1,5 @@
+/.idea
+*.iml
 /.jsweet/
 /target/
 jsweet-maven-plugin-*
