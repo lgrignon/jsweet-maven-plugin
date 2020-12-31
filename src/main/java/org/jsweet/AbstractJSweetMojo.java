@@ -157,6 +157,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     protected List<JSweetProblem> ignoredProblems;
 
     @Parameter(required = false)
+    protected String javaCompilerExtraOptions;
+    
+    @Parameter(required = false)
     protected Boolean ignoreTypeScriptErrors;
 
     @Parameter(required = false)
@@ -281,6 +284,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             logInfo("jdkHome: " + jdkHome);
             logInfo("factoryClassName: " + factoryClassName);
             logInfo("ignoredProblems: " + ignoredProblems);
+            logInfo("javaCompilerExtraOptions: " + javaCompilerExtraOptions);
 
             logInfo("extraSystemPath: " + extraSystemPath);
             if (isNotBlank(extraSystemPath)) {
@@ -365,6 +369,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             }
             if (usingJavaRuntime != null) {
                 transpiler.setUsingJavaRuntime(usingJavaRuntime);
+            }
+            if (javaCompilerExtraOptions != null) {
+                transpiler.setJavaCompilerExtraOptions(javaCompilerExtraOptions.split(","));
             }
 
             return transpiler;
