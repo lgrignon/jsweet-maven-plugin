@@ -156,6 +156,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     @Parameter(required = false)
     protected Boolean usingJavaRuntime;
 
+    @Parameter(required = false)
+    protected Boolean disableOverloadStubs;
+    
     @Component
     protected ArtifactFactory artifactFactory;
 
@@ -263,6 +266,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             logInfo("jdkHome: " + jdkHome);
             logInfo("factoryClassName: " + factoryClassName);
             logInfo("ignoredProblems: " + ignoredProblems);
+            logInfo("disableOverloadStubs: " + disableOverloadStubs);
 
             JSweetConfig.initClassPath(jdkHome.getAbsolutePath());
 
@@ -394,6 +398,10 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             if (usingJavaRuntime != null) {
                 transpiler.setUsingJavaRuntime(usingJavaRuntime);
             }
+            if (disableOverloadStubs != null) {
+            	transpiler.setGenerateOverloadStubs(!disableOverloadStubs);
+            }
+            
 
             return transpiler;
 
