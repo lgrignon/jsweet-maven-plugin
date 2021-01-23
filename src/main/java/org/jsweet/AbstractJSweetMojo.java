@@ -158,6 +158,9 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
 
     @Parameter(required = false)
     protected Boolean disableOverloadStubs;
+
+    @Parameter(required = false)
+    protected Boolean stats;
     
     @Component
     protected ArtifactFactory artifactFactory;
@@ -398,10 +401,12 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
             if (usingJavaRuntime != null) {
                 transpiler.setUsingJavaRuntime(usingJavaRuntime);
             }
+            if (stats != null) {
+            	transpiler.setStats(stats);
+            }
             if (disableOverloadStubs != null) {
             	transpiler.setGenerateOverloadStubs(!disableOverloadStubs);
             }
-            
 
             return transpiler;
 
