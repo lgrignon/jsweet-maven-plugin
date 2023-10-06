@@ -252,6 +252,8 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
                     .map(f -> f.getAbsolutePath()) //
                     .collect(joining(System.getProperty("path.separator")));
 
+            classPath = fixClassPath(classPath);
+
             logInfo("classpath from maven: " + classPath);
 
             File tsOutputDir = getTsOutDir();
@@ -507,6 +509,23 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         return factory;
     }
 
+    private String fixClassPath(String classPath) {
+        StringBuilder sb = new StringBuilder(classPath.length());
+
+        for (String p : classPath.split(":")) {
+            if (p.isEmpty() || p.endsWith(".pom")) {
+                continue;
+            }
+            sb.append(p);
+            sb.append(':');
+        }
+
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 1);
+        }
+        return sb.toString();
+    }
+
     protected File getDeclarationsOutDir() throws IOException {
         File declarationOutDir = null;
         if (isNotBlank(this.dtsOut)) {
@@ -570,13 +589,35 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
         // add artifacts of declared dependencies
         List<Artifact> directDependencies = new LinkedList<>();
         for (Dependency dependency : dependencies) {
-            if (!dependency.getType().equals("jar")
-                    || dependency.getScope() != null && !dependency.getScope().equals(Artifact.SCOPE_COMPILE)) {
+            String type = dependency.getType();
+            String scope = dependency.getScope();
+
+            if (!"jar".equals(type)) {
                 getLog().warn("dependency type not-jar excluded from candies detection: " + dependency);
                 continue;
             }
+
+            switch (scope) {
+            case Artifact.SCOPE_COMPILE:
+            case Artifact.SCOPE_COMPILE_PLUS_RUNTIME:
+            case Artifact.SCOPE_PROVIDED:
+            case Artifact.SCOPE_SYSTEM:
+                // include
+                break;
+            case Artifact.SCOPE_IMPORT:
+            case Artifact.SCOPE_RUNTIME:
+            case Artifact.SCOPE_RUNTIME_PLUS_SYSTEM:
+            case Artifact.SCOPE_TEST:
+                getLog().info("excluding dependency from candies detection, scope: " + scope + ": " + dependency);
+                continue;
+            default:
+                getLog().warn(
+                        "excluding dependency from candies detection, unsupported scope: " + scope + ": " + dependency);
+                continue;
+            }
+
             Artifact mavenArtifact = artifactFactory.createArtifact(dependency.getGroupId(), dependency.getArtifactId(),
-                    dependency.getVersion(), Artifact.SCOPE_COMPILE, "jar");
+                    dependency.getVersion(), scope, type);
 
             logInfo("candies detection: add project dependency " + dependency + " => " + mavenArtifact);
 
