@@ -3,3 +3,9 @@
 /.jsweet/
 /target/
 jsweet-maven-plugin-*
+/.classpath
+/.settings
+/.project
+.factorypath
+*~
+.DS_Store
