@@ -289,7 +289,7 @@ public class JSweetWatchMojo extends AbstractJSweetMojo {
 					}
 					__Lock.unlock();
 				}
-				yield();
+				Thread.yield();
 			}
 		}
 	}
