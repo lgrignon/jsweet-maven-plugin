@@ -169,7 +169,7 @@ public abstract class AbstractJSweetMojo extends AbstractMojo {
     protected File workingDir;
 
     @Parameter(required = false)
-    protected Boolean usingJavaRuntime;
+    protected File usingJavaRuntime;
 
     @Component
     protected ArtifactFactory artifactFactory;
