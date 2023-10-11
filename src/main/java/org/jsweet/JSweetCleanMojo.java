@@ -53,8 +53,6 @@ public class JSweetCleanMojo extends AbstractJSweetMojo {
 			if (candiesJsOut != null) {
 				FileUtils.deleteQuietly(candiesJsOut);
 			}
-
-			FileUtils.deleteQuietly(workingDir == null ? Util.getTranspilerWorkingDirectory(project) : workingDir);
 		} catch (Exception e) {
 			getLog().error("transpilation failed", e);
 			throw new MojoExecutionException("transpilation failed", e);
